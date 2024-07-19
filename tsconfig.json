@@ -1,0 +1,10 @@
+{
+    "extends": "./tsconfig.base",
+    "compilerOptions": {
+        "baseUrl": ".",
+        "paths": {
+            "@chatluna/*": ["packages/*/src"]
+        }
+    },
+    "files": []
+}

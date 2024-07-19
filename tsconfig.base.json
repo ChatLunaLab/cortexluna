@@ -1,0 +1,21 @@
+{
+    "compilerOptions": {
+        "target": "es2022",
+        "module": "nodenext",
+        "lib": ["es2022"],
+        "declaration": true,
+        "composite": true,
+        "incremental": true,
+        "skipLibCheck": true,
+        "esModuleInterop": true,
+        "strictNullChecks": false,
+
+        "emitDeclarationOnly": true,
+        "allowImportingTsExtensions": true,
+        "strict": true,
+        "noImplicitAny": false,
+        "sourceMap": true,
+        "jsx": "react-jsx",
+        "jsxImportSource": "@satorijs/element"
+    }
+}
