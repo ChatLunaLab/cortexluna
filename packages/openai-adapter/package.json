@@ -1,0 +1,69 @@
+{
+    "name": "@chatluna/adapter-openai",
+    "description": "openai style api adapter for chatluna",
+    "version": "0.0.1",
+    "main": "lib/index.cjs",
+    "module": "lib/index.mjs",
+    "typings": "lib/index.d.ts",
+    "files": [
+        "lib",
+        "dist"
+    ],
+    "exports": {
+        ".": {
+            "import": "./lib/index.mjs",
+            "require": "./lib/index.cjs",
+            "types": "./lib/index.d.ts"
+        },
+        "./package.json": "./package.json"
+    },
+    "type": "module",
+    "author": "dingyi222666 <dingyi222666@foxmail.com>",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/ChatLunaLab/chatluna.git",
+        "directory": "packages/openai-adapter"
+    },
+    "license": "AGPL-3.0",
+    "bugs": {
+        "url": "https://github.com/ChatLunaLab/adapters/issues"
+    },
+    "homepage": "https://github.com/ChatLunaLab/adapter/tree/main/packages/openai-adapter#readme",
+    "scripts": {
+        "build": "atsc -b"
+    },
+    "engines": {
+        "node": ">=18.0.0"
+    },
+    "keywords": [
+        "chatbot",
+        "koishi",
+        "plugin",
+        "service",
+        "chatgpt",
+        "gpt",
+        "chatluna",
+        "adapter"
+    ],
+    "dependencies": {
+        "@langchain/core": "^0.2.12"
+    },
+    "devDependencies": {
+        "atsc": "^2.1.0",
+        "cordis": "^3.17.5"
+    },
+    "peerDependencies": {
+        "@chatluna/core": "^0.0.1",
+        "cordis": "^3.17.5"
+    },
+    "cordis": {
+        "description": {
+            "zh": "ChatLuna OpenAI 风格 API 适配器"
+        },
+        "service": {
+            "required": [
+                "chatluna_platform"
+            ]
+        }
+    }
+}
