@@ -22,13 +22,13 @@
     "repository": {
         "type": "git",
         "url": "https://github.com/ChatLunaLab/chatluna.git",
-        "directory": "packages/openai-adapter"
+        "directory": "packages/openai"
     },
     "license": "AGPL-3.0",
     "bugs": {
         "url": "https://github.com/ChatLunaLab/adapters/issues"
     },
-    "homepage": "https://github.com/ChatLunaLab/adapter/tree/main/packages/openai-adapter#readme",
+    "homepage": "https://github.com/ChatLunaLab/adapter/tree/main/packages/openai#readme",
     "scripts": {
         "build": "atsc -b"
     },
@@ -46,15 +46,25 @@
         "adapter"
     ],
     "dependencies": {
-        "@langchain/core": "^0.2.12"
+        "@chatluna/core": "^0.0.1",
+        "@chatluna/utils": "^0.0.1",
+        "@langchain/core": "^0.2.17"
     },
     "devDependencies": {
         "atsc": "^2.1.0",
         "cordis": "^3.17.5"
     },
     "peerDependencies": {
-        "@chatluna/core": "^0.0.1",
+        "@chatluna/service": "^0.0.1",
         "cordis": "^3.17.5"
+    },
+    "peerDependenciesMeta": {
+        "@chatluna/service": {
+            "optional": true
+        },
+        "cordis": {
+            "optional": true
+        }
     },
     "cordis": {
         "description": {
