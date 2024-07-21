@@ -8,6 +8,32 @@ ChatLuna 模型适配器项目。
 
   为 ChatLuna 提供 OpenAI 支持的适配器。
 
+## 用法
+
+### Requester
+
+```ts
+const requester = new OpenAIRequester({
+    apiKey: '',
+    apiEndpoint: 'https://api.openai.com/v1',
+    platform: 'openai'
+})
+
+const messages = [new HumanMessage('What is the capital of France?')]
+
+const generation = await requester.completion({
+   input: messages,
+   model: 'gpt-3.5-turbo',
+   maxTokens: 100
+})
+
+console.log(generation.message.content)
+```
+
+### With Client (LangChain Model)
+
+### With Full Cordis Context (ChatLuna Platform Service, Requester Service)
+
 ## 致谢
 
 感谢 [LangChain](https://github.com/langchain-ai/langchainjs) 项目。本项目基于其进行二次封装。

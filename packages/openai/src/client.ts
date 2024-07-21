@@ -17,29 +17,35 @@ export class OpenAIClient extends PlatformModelAndEmbeddingsClient {
 
     private _models: Record<string, ModelInfo>
 
+    private _config: Config
+
     constructor(
         clientConfig: OpenAIClientConfig,
-        private _config?: Config,
+        _config?: Partial<Config>,
         ctx?: Context,
         request?: Request
     ) {
         super(clientConfig, ctx)
-        this._config = this._config ?? {
-            platform: 'openai',
-            pullModels: true,
-            additionalModels: [],
-            maxTokens: 4096,
-            temperature: 0.8,
-            presencePenalty: 0.2,
-            frequencyPenalty: 0.2,
-            timeout: 1000 * 60 * 5,
-            maxRetries: 3,
-            additionCookies: [],
-            configMode: 'default',
-            apiKeys: [],
-            proxyAddress: undefined,
-            proxyMode: 'system'
-        }
+        this._config = Object.assign(
+            {},
+            {
+                platform: 'openai',
+                pullModels: true,
+                additionalModels: [],
+                maxTokens: 4096,
+                temperature: 0.8,
+                presencePenalty: 0.2,
+                frequencyPenalty: 0.2,
+                timeout: 1000 * 60 * 5,
+                maxRetries: 3,
+                additionCookies: [],
+                configMode: 'default',
+                apiKeys: [],
+                proxyAddress: undefined,
+                proxyMode: 'system'
+            },
+            _config ?? {}
+        )
         this.platform = _config.platform
         this._requester = new OpenAIRequester(
             clientConfig,
