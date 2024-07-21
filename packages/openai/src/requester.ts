@@ -185,7 +185,7 @@ export class OpenAIRequester
         }, data)
     }
 
-    async getModels() {
+    async getModels(): Promise<string[]> {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         let data: any
         try {
@@ -218,7 +218,7 @@ export class OpenAIRequester
             'Content-Type': 'application/json'
         }
 
-        if (Object.keys(this.config.additionCookies).length > 0) {
+        if (Object.keys(this.config?.additionCookies ?? {}).length > 0) {
             result['Cookie'] = Object.entries(this.config.additionCookies)
                 .map(([key, value]) => `${key}=${value}`)
                 .join('; ')

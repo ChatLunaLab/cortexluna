@@ -1,10 +1,63 @@
 import { Context, Schema } from 'cordis'
 import { ChatLunaPlatformPlugin } from '@chatluna/service/service'
+import { OpenAIClient } from './client.ts'
+import { Request } from '@chatluna/core/service'
+import { OpenAIClientConfig } from './types.ts'
 
 export const reusable = true
 
 export function apply(ctx: Context, config: Config) {
-    const plugin = new ChatLunaPlatformPlugin(ctx, config)
+    const plugin = new ChatLunaPlatformPlugin<OpenAIClientConfig, Config>(
+        ctx,
+        config
+    )
+
+    ctx.on('ready', async () => {
+        plugin.install()
+
+        plugin.parseConfig((config) => {
+            return config.apiKeys.map(([apiKey, apiEndpoint]) => {
+                return {
+                    apiKey,
+                    apiEndpoint,
+                    platform: config.platform,
+                    timeout: config.timeout,
+                    maxRetries: config.maxRetries,
+                    concurrentMaxSize: config.chatConcurrentMaxSize,
+                    // [string,string][] => Record<string,string>
+                    additionCookies: config.additionCookies.reduce(
+                        (acc, [key, value]) => {
+                            acc[key] = value
+                            return acc
+                        },
+                        {} as Record<string, string>
+                    )
+                }
+            })
+        })
+
+        let request: Request
+
+        switch (config.proxyMode) {
+            case 'on':
+                request = ctx.chatluna_request.create(ctx, config.proxyAddress)
+                break
+            case 'off':
+                request = ctx.chatluna_request.create(ctx)
+                break
+            case 'system':
+                request = ctx.chatluna_request.root
+                break
+            default:
+                request = ctx.chatluna_request.root
+        }
+
+        await plugin.registerClient((ctx, clientConfig) => {
+            return new OpenAIClient(clientConfig, config, ctx, request)
+        })
+
+        await plugin.initClients()
+    })
 }
 
 export interface Config extends ChatLunaPlatformPlugin.Config {
@@ -111,7 +164,7 @@ export const Config: Schema<Config> = Schema.intersect([
 
 export const inject = ['chatluna_platform', 'chatluna_request']
 
-export const name = 'chatluna/adapter-openai'
+export const name = '@chatluna/adapter-openai'
 
 export * from './requester.ts'
 export * from './types.ts'
