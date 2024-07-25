@@ -6,7 +6,13 @@ import {
 } from '@chatluna/core/model'
 import { Request, DefaultRequest } from '@chatluna/core/service'
 import { OpenAIClientConfig } from './types.ts'
-import { ChatLunaError, ChatLunaErrorCode, sseIterable } from '@chatluna/utils'
+import {
+    ChatLunaError,
+    ChatLunaErrorCode,
+    sseIterable,
+    Option,
+    Require
+} from '@chatluna/utils'
 import { Logger } from 'cordis'
 import {
     convertOpenAIDeltaToMessageChunk,
@@ -24,7 +30,10 @@ export class OpenAIRequester
 {
     requestService: Request
     constructor(
-        public config: OpenAIClientConfig,
+        public config: Require<
+            Option<OpenAIClientConfig, 'platform'>,
+            'apiEndpoint'
+        >,
         request?: Request,
         public _logger?: Logger
     ) {

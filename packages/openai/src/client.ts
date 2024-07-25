@@ -48,7 +48,8 @@ export class OpenAIClient extends PlatformModelAndEmbeddingsClient {
         )
         this.platform = _config.platform
         this._requester = new OpenAIRequester(
-            clientConfig,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            clientConfig as any,
             request,
             ctx?.logger('@chatluna/adapter-openai')
         )

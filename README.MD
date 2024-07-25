@@ -15,8 +15,7 @@ ChatLuna 模型适配器项目。
 ```ts
 const requester = new OpenAIRequester({
     apiKey: '',
-    apiEndpoint: 'https://api.openai.com/v1',
-    platform: 'openai'
+    apiEndpoint: 'https://api.openai.com/v1'
 })
 
 const messages = [new HumanMessage('What is the capital of France?')]
