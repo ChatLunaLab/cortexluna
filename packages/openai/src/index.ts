@@ -13,8 +13,6 @@ export function apply(ctx: Context, config: Config) {
     )
 
     ctx.on('ready', async () => {
-        plugin.install()
-
         plugin.parseConfig((config) => {
             return config.apiKeys.map(([apiKey, apiEndpoint]) => {
                 return {
@@ -82,7 +80,7 @@ export const Config: Schema<Config> = Schema.intersect([
     Schema.object({
         platform: Schema.string()
             .description('适配器平台名称')
-            .default('openai-like'),
+            .default('openai'),
         pullModels: Schema.boolean()
             .description('是否自动拉取模型(关闭后只会使用下面的模型)')
             .default(true),
@@ -162,7 +160,7 @@ export const Config: Schema<Config> = Schema.intersect([
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
 ]) as any
 
-export const inject = ['chatluna_platform', 'chatluna_request']
+export const inject = ['chatluna_platform', 'chatluna_request', 'chatluna']
 
 export const name = '@chatluna/adapter-openai'
 
