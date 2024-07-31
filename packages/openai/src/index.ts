@@ -3,6 +3,7 @@ import { ChatLunaPlatformPlugin } from '@chatluna/service/service'
 import { OpenAIClient } from './client.ts'
 import { Request } from '@chatluna/core/service'
 import { OpenAIClientConfig } from './types.ts'
+import { interpolate } from '@chatluna/utils'
 
 export const reusable = true
 
@@ -16,8 +17,8 @@ export function apply(ctx: Context, config: Config) {
         plugin.parseConfig((config) => {
             return config.apiKeys.map(([apiKey, apiEndpoint]) => {
                 return {
-                    apiKey,
-                    apiEndpoint,
+                    apiKey: interpolate(apiKey),
+                    apiEndpoint: interpolate(apiEndpoint),
                     platform: config.platform,
                     timeout: config.timeout,
                     maxRetries: config.maxRetries,
