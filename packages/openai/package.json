@@ -48,15 +48,15 @@
     "dependencies": {
         "@chatluna/core": "^0.0.1",
         "@chatluna/utils": "^0.0.1",
-        "@langchain/core": "^0.2.17"
+        "@langchain/core": "^0.2.30"
     },
     "devDependencies": {
         "atsc": "^2.1.0",
-        "cordis": "^3.17.5"
+        "cordis": "^3.18.0"
     },
     "peerDependencies": {
         "@chatluna/service": "^0.0.1",
-        "cordis": "^3.17.5"
+        "cordis": "^3.18.0"
     },
     "peerDependenciesMeta": {
         "@chatluna/service": {
