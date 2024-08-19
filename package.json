@@ -23,7 +23,7 @@
         "@types/chai-subset": "^1",
         "@types/mocha": "^10.0.7",
         "@types/node": "^22.1.0",
-        "@typescript-eslint/eslint-plugin": "^7.16.2-alpha.11",
+        "@typescript-eslint/eslint-plugin": "^8.2.0",
         "@typescript-eslint/parser": "^7.16.2-alpha.11",
         "cross-env": "^7.0.3",
         "esbuild": "^0.23.0",
