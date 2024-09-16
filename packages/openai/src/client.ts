@@ -7,7 +7,7 @@ import { OpenAIRequester } from './requester.ts'
 import { ChatLunaChatModel, ChatLunaEmbeddings } from '@chatluna/core/model'
 import { ChatLunaError, ChatLunaErrorCode } from '@chatluna/utils'
 import { Request } from '@chatluna/core/service'
-import { Config, OpenAIClientConfig } from './index.ts'
+import OpenAIPlugin, { OpenAIClientConfig } from './index.ts'
 import { Context } from 'cordis'
 
 export class OpenAIClient extends PlatformModelAndEmbeddingsClient {
@@ -17,11 +17,11 @@ export class OpenAIClient extends PlatformModelAndEmbeddingsClient {
 
     private _models: Record<string, ModelInfo>
 
-    private _config: Config
+    private _config: OpenAIPlugin.Config
 
     constructor(
         clientConfig: OpenAIClientConfig,
-        _config?: Partial<Config>,
+        _config?: Partial<OpenAIPlugin.Config>,
         ctx?: Context,
         request?: Request
     ) {

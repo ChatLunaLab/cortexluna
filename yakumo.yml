@@ -19,3 +19,5 @@
   name: yakumo/version
 - id: r33l6y
   name: yakumo/publish
+- id: 30dp48
+  name: yakumo/run

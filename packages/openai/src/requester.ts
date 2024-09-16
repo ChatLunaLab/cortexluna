@@ -29,6 +29,7 @@ export class OpenAIRequester
     implements EmbeddingsRequester
 {
     requestService: Request
+
     constructor(
         public config: Require<
             Option<OpenAIClientConfig, 'platform'>,
