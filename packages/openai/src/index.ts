@@ -11,7 +11,7 @@ class OpenAIPlugin extends ChatLunaPlatformPlugin<
     OpenAIPlugin.Config
 > {
     constructor(ctx: Context, config: OpenAIPlugin.Config) {
-        super(ctx, config)
+        super(ctx, config, true)
     }
 
     createClient(
