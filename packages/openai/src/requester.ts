@@ -156,7 +156,7 @@ export class OpenAIRequester
                 frequency_penalty: params.frequencyPenalty,
                 n: params.n,
                 top_p: params.topP,
-                user: params.user ?? 'user',
+                user: params.user,
                 stream: true,
                 logit_bias: params.logitBias
             },
