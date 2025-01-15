@@ -110,10 +110,7 @@ export class OpenAIRequester
             )
         }
 
-        const choice = data.choices?.[0]
-        if (!choice) {
-            return []
-        }
+        const choice = data.choices?.[0] ?? { delta: { content: '', role: '' } }
 
         const { delta } = choice
         const messageChunk = convertOpenAIDeltaToMessageChunk(
@@ -139,41 +136,47 @@ export class OpenAIRequester
     }
 
     private async _createChatStream(params: ModelRequestParams) {
-        const response = await this._post(
-            'chat/completions',
-            {
-                model: params.model,
-                messages: langchainMessageToOpenAIMessage(
-                    params.input,
-                    params.model
-                ),
-                tools:
-                    params.tools != null
-                        ? formatToolsToOpenAITools(params.tools)
-                        : undefined,
-                stop: params.stop != null ? params.stop : undefined,
-                // remove max_tokens
-                max_tokens: params.model.includes('vision')
-                    ? undefined
-                    : params.maxTokens,
-                temperature: params.temperature,
-                presence_penalty: params.presencePenalty,
-                frequency_penalty: params.frequencyPenalty,
-                n: params.n,
-                stream_options: {
-                    include_usage: true
-                },
-                top_p: params.topP,
-                user: params.user,
-                stream: true,
-                logit_bias: params.logitBias
-            },
-            {
-                signal: params.signal
-            }
-        )
+        return this._runCatch(
+            async () => {
+                const response = await this._post(
+                    'chat/completions',
+                    {
+                        model: params.model,
+                        messages: langchainMessageToOpenAIMessage(
+                            params.input,
+                            params.model
+                        ),
+                        tools:
+                            params.tools != null
+                                ? formatToolsToOpenAITools(params.tools)
+                                : undefined,
+                        stop: params.stop != null ? params.stop : undefined,
+                        // remove max_tokens
+                        max_tokens: params.model.includes('vision')
+                            ? undefined
+                            : params.maxTokens,
+                        temperature: params.temperature,
+                        presence_penalty: params.presencePenalty,
+                        frequency_penalty: params.frequencyPenalty,
+                        n: params.n,
+                        stream_options: {
+                            include_usage: true
+                        },
+                        top_p: params.topP,
+                        user: params.user,
+                        stream: true,
+                        logit_bias: params.logitBias
+                    },
+                    {
+                        signal: params.signal
+                    }
+                )
 
-        return sseIterable(response)
+                return sseIterable(response)
+            },
+            params,
+            this.configLocked
+        )
     }
 
     async embeddings(
@@ -181,26 +184,32 @@ export class OpenAIRequester
     ): Promise<number[] | number[][]> {
         let data: OpenAICreateEmbeddingResponse | string
 
-        return this._runCatch(async () => {
-            const response = await this._post('embeddings', {
-                input: params.input,
-                model: params.model
-            })
+        return this._runCatch(
+            async () => {
+                const response = await this._post('embeddings', {
+                    input: params.input,
+                    model: params.model
+                })
 
-            data = await response.text()
+                data = await response.text()
 
-            data = JSON.parse(data as string) as OpenAICreateEmbeddingResponse
+                data = JSON.parse(
+                    data as string
+                ) as OpenAICreateEmbeddingResponse
 
-            if (data.data && data.data.length > 0) {
-                return (data as OpenAICreateEmbeddingResponse).data.map(
-                    (it) => it.embedding
+                if (data.data && data.data.length > 0) {
+                    return (data as OpenAICreateEmbeddingResponse).data.map(
+                        (it) => it.embedding
+                    )
+                }
+
+                throw new Error(
+                    'error when request, Result: ' + JSON.stringify(data)
                 )
-            }
-
-            throw new Error(
-                'error when request, Result: ' + JSON.stringify(data)
-            )
-        }, data)
+            },
+            data,
+            this.configLocked
+        )
     }
 
     async getModels(): Promise<string[]> {
@@ -233,7 +242,8 @@ export class OpenAIRequester
     _buildHeaders() {
         const result = {
             Authorization: `Bearer ${this.config.apiKey}`,
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+            Accept: 'application/json, text/event-stream'
         }
 
         if (Object.keys(this.config?.additionCookies ?? {}).length > 0) {
