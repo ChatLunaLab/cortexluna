@@ -1,12 +1,18 @@
 import {
     ClientConfigPoolMode,
+    ModelCapability,
     ModelInfo,
     ModelType,
     PlatformModelAndEmbeddingsClient
 } from '@chatluna/core/platform'
 import { OpenAIRequester } from './requester.ts'
 import { ChatLunaChatModel, ChatLunaEmbeddings } from '@chatluna/core/model'
-import { ChatLunaError, ChatLunaErrorCode, interpolate } from '@chatluna/utils'
+import {
+    ChatLunaError,
+    ChatLunaErrorCode,
+    interpolate,
+    notNull
+} from '@chatluna/utils'
 import { Request } from '@chatluna/core/service'
 import OpenAIPlugin, { OpenAIClientConfig } from './index.ts'
 import { Context } from 'cordis'
@@ -101,15 +107,27 @@ export class OpenAIClient extends PlatformModelAndEmbeddingsClient<
 
             const additionalModels = this._config?.additionalModels?.map(
                 ({ model, modelType: llmType, contextSize: token }) => {
+                    const type =
+                        llmType === 'Embeddings 嵌入模型'
+                            ? ModelType.embeddings
+                            : ModelType.llm
                     return {
                         name: model,
-                        type:
-                            llmType === 'Embeddings 嵌入模型'
-                                ? ModelType.embeddings
-                                : ModelType.llm,
-                        functionCall: llmType === 'LLM 大语言模型（函数调用）',
-                        maxTokens: token ?? 4096,
-                        supportMode: ['all']
+                        type,
+                        capabilities: notNull([
+                            llmType === 'LLM 大语言模型（函数调用）'
+                                ? ModelCapability.FUNCTION_CALL
+                                : undefined,
+                            ModelCapability.INPUT_TEXT,
+                            type === ModelType.llm
+                                ? ModelCapability.OUTPUT_TEXT
+                                : undefined,
+                            type === ModelType.llm
+                                ? ModelCapability.INPUT_IMAGE
+                                : undefined
+                        ]),
+
+                        maxTokens: token ?? 4096
                     } as ModelInfo
                 }
             )
@@ -125,13 +143,26 @@ export class OpenAIClient extends PlatformModelAndEmbeddingsClient<
                         )
                 )
                 .map((model) => {
+                    const type = model.includes('text-embedding')
+                        ? ModelType.embeddings
+                        : ModelType.llm
                     return {
                         name: model,
                         type: model.includes('text-embedding')
                             ? ModelType.embeddings
                             : ModelType.llm,
-                        functionCall: true,
-                        supportMode: ['all']
+                        capabilities: notNull([
+                            type === ModelType.llm
+                                ? ModelCapability.FUNCTION_CALL
+                                : undefined,
+                            ModelCapability.INPUT_TEXT,
+                            type === ModelType.llm
+                                ? ModelCapability.OUTPUT_TEXT
+                                : undefined,
+                            type === ModelType.llm
+                                ? ModelCapability.INPUT_IMAGE
+                                : undefined
+                        ])
                     } as ModelInfo
                 })
                 .concat(additionalModels)
