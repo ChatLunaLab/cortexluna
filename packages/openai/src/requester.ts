@@ -1,17 +1,16 @@
 import {
-    HttpModelRequester,
     EmbeddingsRequester,
     EmbeddingsRequestParams,
+    HttpModelRequester,
     ModelRequestParams
 } from '@chatluna/core/model'
-import { Request, DefaultRequest } from '@chatluna/core/service'
+import { DefaultRequest, Request } from '@chatluna/core/service'
 import { OpenAIClientConfig } from './types.ts'
 import {
     ChatLunaError,
     ChatLunaErrorCode,
-    sseIterable,
     Option,
-    Require
+    sseIterable
 } from '@chatluna/utils'
 import { Logger } from 'cordis'
 import {
@@ -23,22 +22,24 @@ import {
     OpenAIResponse
 } from '@chatluna/core/utils'
 import { ChatGenerationChunk } from '@langchain/core/outputs'
+import { ClientConfigPool } from '@chatluna/core/platform'
 
 export class OpenAIRequester
-    extends HttpModelRequester
+    extends HttpModelRequester<OpenAIClientConfig>
     implements EmbeddingsRequester
 {
     requestService: Request
 
     constructor(
-        public config: Require<
-            Option<OpenAIClientConfig, 'platform'>,
-            'apiEndpoint'
-        >,
+        config:
+            | ClientConfigPool<OpenAIClientConfig>
+            | (Option<OpenAIClientConfig, 'platform'> & {
+                  apiEndpoint: string
+              }),
         request?: Request,
         public _logger?: Logger
     ) {
-        super()
+        super(config, request, _logger)
         this.requestService = request ?? new DefaultRequest()
     }
 
@@ -127,7 +128,11 @@ export class OpenAIRequester
         return [
             new ChatGenerationChunk({
                 message: messageChunk,
-                text: messageChunk.content as string
+                text: messageChunk.content as string,
+                generationInfo: {
+                    finish_reason: data.choices?.[0]?.finish_reason,
+                    tokenUsage: data?.usage
+                }
             }),
             defaultRole
         ]
@@ -155,6 +160,9 @@ export class OpenAIRequester
                 presence_penalty: params.presencePenalty,
                 frequency_penalty: params.frequencyPenalty,
                 n: params.n,
+                stream_options: {
+                    include_usage: true
+                },
                 top_p: params.topP,
                 user: params.user,
                 stream: true,

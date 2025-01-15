@@ -1,16 +1,20 @@
 import {
+    ClientConfigPoolMode,
     ModelInfo,
     ModelType,
     PlatformModelAndEmbeddingsClient
 } from '@chatluna/core/platform'
 import { OpenAIRequester } from './requester.ts'
 import { ChatLunaChatModel, ChatLunaEmbeddings } from '@chatluna/core/model'
-import { ChatLunaError, ChatLunaErrorCode } from '@chatluna/utils'
+import { ChatLunaError, ChatLunaErrorCode, interpolate } from '@chatluna/utils'
 import { Request } from '@chatluna/core/service'
 import OpenAIPlugin, { OpenAIClientConfig } from './index.ts'
 import { Context } from 'cordis'
 
-export class OpenAIClient extends PlatformModelAndEmbeddingsClient {
+export class OpenAIClient extends PlatformModelAndEmbeddingsClient<
+    OpenAIClientConfig,
+    OpenAIPlugin.Config
+> {
     platform = 'openai'
 
     private _requester: OpenAIRequester
@@ -20,12 +24,21 @@ export class OpenAIClient extends PlatformModelAndEmbeddingsClient {
     private _config: OpenAIPlugin.Config
 
     constructor(
-        clientConfig: OpenAIClientConfig,
-        _config?: Partial<OpenAIPlugin.Config>,
+        config: OpenAIPlugin.Config,
+        platform: string,
         ctx?: Context,
+        configPoolMode?: ClientConfigPoolMode,
         request?: Request
     ) {
-        super(clientConfig, ctx)
+        super(
+            config,
+            platform,
+            ctx,
+            (configPoolMode ?? config.configMode === 'default')
+                ? ClientConfigPoolMode.AlwaysTheSame
+                : ClientConfigPoolMode.LoadBalancing
+        )
+
         this._config = Object.assign(
             {},
             {
@@ -44,15 +57,36 @@ export class OpenAIClient extends PlatformModelAndEmbeddingsClient {
                 proxyAddress: undefined,
                 proxyMode: 'system'
             },
-            _config ?? {}
+            config ?? {}
         )
-        this.platform = _config.platform
+        this.platform = config.platform
         this._requester = new OpenAIRequester(
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            clientConfig as any,
+            this.configPool,
             request,
             ctx?.logger('@chatluna/adapter-openai')
         )
+    }
+
+    parseConfig(config: OpenAIPlugin.Config): OpenAIClientConfig[] {
+        return config.apiKeys.map(([apiKey, apiEndpoint]) => {
+            return {
+                apiKey: interpolate(apiKey),
+                apiEndpoint: interpolate(apiEndpoint),
+                platform: config.platform,
+                timeout: config.timeout,
+                maxRetries: config.maxRetries,
+                concurrentMaxSize: config.chatConcurrentMaxSize,
+                // [string,string][] => Record<string,string>
+                additionCookies: config.additionCookies.reduce(
+                    (acc, [key, value]) => {
+                        acc[key] = value
+                        return acc
+                    },
+                    {} as Record<string, string>
+                )
+            }
+        })
     }
 
     async init(): Promise<void> {
