@@ -48,7 +48,7 @@
     "dependencies": {
         "@chatluna/core": "^0.0.1",
         "@chatluna/utils": "^0.0.1",
-        "@langchain/core": "^0.3.27"
+        "@langchain/core": "^0.3.30"
     },
     "devDependencies": {
         "atsc": "^2.1.0",
