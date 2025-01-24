@@ -252,17 +252,8 @@ export class OpenAIRequester
                 .join('; ')
         }
 
+        console.log(this.config)
+
         return result
-    }
-
-    _concatUrl(url: string): string {
-        // TODO: move to http model requester
-        const apiEndPoint = this.config.apiEndpoint
-
-        if (apiEndPoint.endsWith('/')) {
-            return apiEndPoint + url
-        }
-
-        return apiEndPoint + '/' + url
     }
 }
