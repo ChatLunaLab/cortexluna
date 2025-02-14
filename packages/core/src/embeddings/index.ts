@@ -1,13 +1,13 @@
-export type EmbeddingsModel = {
+export type EmbeddingModel = {
     readonly provider: string
 
-    readonly modelId: string
+    readonly model: string
 
     readonly batchSize: number | undefined
 
     doEmbed(options: {
         values: string[]
-        modelId?: string
+        model?: string
         signal?: AbortSignal
     }): PromiseLike<{
         embeddings: number[][]

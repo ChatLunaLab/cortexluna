@@ -55,7 +55,7 @@ export type LanguageModelStreamResponseChunk =
           type: 'response-metadata'
           id?: string
           timestamp?: Date
-          modelId?: string
+          model?: string
       }
 
     // the usage stats, finish reason and logprobs should be the last part of the
@@ -102,12 +102,45 @@ export type LanguageModelSource = {
 export type LanguageModelCallOptions = LanguageModelCallSettings & {
     prompt: BaseMessage[]
     model?: string
+    tools?: LanguageModelTool[]
 }
 
 export interface LanguageModelToolCall {
     toolId?: string
     toolName?: string
     arguments?: string
+}
+
+/**
+A tool has a name, a description, and a set of parameters.
+
+Note: this is **not** the user-facing tool definition. The AI SDK methods will
+map the user-facing tool definitions to this format.
+ */
+export type LanguageModelTool = {
+    /**
+The type of the tool (always 'function').
+   */
+    type: 'function'
+
+    function: {
+        /**
+The name of the tool. Unique within this model call.
+   */
+        name: string
+
+        /**
+A description of the tool. The language model uses this to understand the
+tool's purpose and to provide better completion suggestions.
+   */
+        description?: string
+
+        /**
+The parameters that the tool expects. The language model uses this to
+understand the tool's input requirements and to provide matching suggestions.
+   */
+        parameters: JSONSchema7
+    }
 }
 
 /**
