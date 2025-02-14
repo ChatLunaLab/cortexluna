@@ -254,6 +254,7 @@ export function createMessageChunk<
     } as T
 }
 
+// eslint-disable-next-line @typescript-eslint/naming-convention
 export function _mergeDicts(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     left: Record<string, any>,
@@ -298,7 +299,7 @@ export function _mergeDicts(
     return merged
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+// eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/naming-convention
 export function _mergeLists(left?: any[], right?: any[]) {
     if (left === undefined && right === undefined) {
         return undefined
@@ -335,7 +336,7 @@ export function _mergeLists(left?: any[], right?: any[]) {
     }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+// eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/naming-convention
 export function _mergeObj<T = any>(
     left: T | undefined,
     right: T | undefined
