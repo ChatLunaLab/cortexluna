@@ -4,13 +4,19 @@ CortexLuna 是简易，轻量化的 LLM 框架。建设在 Cordis 之上，与 L
 
 在设计上，CortexLuna 借鉴了 Langchain 和 Vercel AI SDK 的设计思路，并且在实现上也有一些借鉴。
 
+## 我是否应该使用 CortexLuna？
+
+CortexLuna 并不是为了取代 Langchain 或 Vercel AI SDK，而是为了给一部分用户提供一个更简单，轻量级的 LLM 框架。
+
+由于 Langchain 过于笨重，但是 Vercel AI SDK 的设计又有一些简洁。我尝试将两者的优点结合起来，形成了 CortexLuna。
+
 ## 致谢
 
 感谢以下开源项目：
 
-- [langchain/langchainjs](https://github.com/langchain-ai/langchainjs)
-- [vecel/ai](https://github.com/vercel)
-- [cordis](https://github.com/cordiverse/cordis)
+* [langchain/langchainjs](https://github.com/langchain-ai/langchainjs)
+* [vecel/ai](https://github.com/vercel)
+* [cordis](https://github.com/cordiverse/cordis)
 
 最后感谢所有 ChatLuna 的贡献者和用户，没有你们的支持，ChatLuna 就不会继续向前发展。
 

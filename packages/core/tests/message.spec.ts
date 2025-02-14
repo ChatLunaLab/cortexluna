@@ -178,7 +178,7 @@ describe('messages', () => {
         it('should merge two dictionaries', () => {
             const left = { a: 1 }
             const right = { b: 2 }
-            expect(_mergeObj(left, right)).to.deep.equal({ a: 1, b: 2 })
+            expect(_mergeObj<any>(left, right).to.deep.equal({ a: 1, b: 2 }))
         })
 
         it('should return left if right is undefined', () => {

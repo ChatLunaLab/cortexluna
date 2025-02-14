@@ -9,8 +9,8 @@ import {
 } from '../messages/messages.ts'
 import {
     BasePromptTemplate,
-    createPromptTemplate,
-    paritalPromptTemplate
+    paritalPromptTemplate,
+    promptTemplate
 } from './base.ts'
 import { InputValues } from './types.ts'
 
@@ -28,7 +28,7 @@ export interface BaseMessagesPromptTemplate<
     _type: 'base_messages_prompt_template'
 }
 
-export function createMessagesPlaceholderPromptTemplate(
+export function messagesPlaceholderPromptTemplate(
     variableName: string,
     optional: boolean = false
 ): BaseMessagesPromptTemplate {
@@ -71,12 +71,12 @@ export function createMessagesPlaceholderPromptTemplate(
     }
 }
 
-export function createMessagePromptTemplate<T extends MessageRole = 'user'>(
+export function messagePromptTemplate<T extends MessageRole = 'user'>(
     role: T,
     prompt: string | BasePromptTemplate
 ): BaseMessagePromptTemplate<InferMessageTypeByRole<T>> {
     const template =
-        typeof prompt === 'string' ? createPromptTemplate(prompt) : prompt
+        typeof prompt === 'string' ? promptTemplate(prompt) : prompt
 
     return {
         role,
@@ -93,31 +93,29 @@ export function createMessagePromptTemplate<T extends MessageRole = 'user'>(
             return [await this.format(values)]
         },
         partial(values) {
-            return createMessagePromptTemplate(role, template.partial(values))
+            return messagePromptTemplate(role, template.partial(values))
         },
         _type: 'base_message_prompt_template'
     }
 }
 
-export function createSystemMessagePromptTemplate(
+export function systemMessagePromptTemplate(
     prompt: string | BasePromptTemplate
 ) {
-    return createMessagePromptTemplate('system', prompt)
+    return messagePromptTemplate('system', prompt)
 }
 
-export function createAssistantMessagePromptTemplate(
+export function assistantMessagePromptTemplate(
     prompt: string | BasePromptTemplate
 ) {
-    return createMessagePromptTemplate('assistant', prompt)
+    return messagePromptTemplate('assistant', prompt)
 }
 
-export function createUserMessagePromptTemplate(
-    prompt: string | BasePromptTemplate
-) {
-    return createMessagePromptTemplate('user', prompt)
+export function userMessagePromptTemplate(prompt: string | BasePromptTemplate) {
+    return messagePromptTemplate('user', prompt)
 }
 
-export function createChatPromptTemplate(
+export function chatPromptTemplate(
     message: (
         | BaseMessagePromptTemplate
         | BaseMessagesPromptTemplate
@@ -127,7 +125,7 @@ export function createChatPromptTemplate(
 ): BaseMessagesPromptTemplate {
     const templates = message.map((item) => {
         if (Array.isArray(item)) {
-            return createMessagePromptTemplate(
+            return messagePromptTemplate(
                 MessageRoleSchema.parse(item[0]),
                 item[1]
             )

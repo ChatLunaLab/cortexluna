@@ -38,7 +38,7 @@ export function paritalPromptTemplate<T extends any = string>(
     }
 }
 
-export function createPromptTemplate(template: string): BasePromptTemplate {
+export function promptTemplate(template: string): BasePromptTemplate {
     const nodes = parseTemplate(template)
 
     const inputVariables = nodes
