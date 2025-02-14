@@ -8,11 +8,10 @@
         "incremental": true,
         "skipLibCheck": true,
         "esModuleInterop": true,
-        "strictNullChecks": false,
-
         "emitDeclarationOnly": true,
         "allowImportingTsExtensions": true,
-        "strict": true,
+        "strict": false,
+        "strictNullChecks": false,
         "noImplicitAny": false,
         "sourceMap": true,
         "jsx": "react-jsx",

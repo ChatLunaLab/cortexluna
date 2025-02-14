@@ -1,13 +1,13 @@
 import { z } from 'zod'
 
-export type DataContent = string | Uint8Array | ArrayBuffer | Buffer
-
 export const DataContentSchema = z.union([
     z.string(),
     z.instanceof(Uint8Array),
     z.instanceof(ArrayBuffer),
     z.instanceof(Buffer)
 ])
+
+export type DataContent = z.infer<typeof DataContentSchema>
 
 export function dataContentToBase64(data: DataContent): string {
     if (typeof data === 'string') {

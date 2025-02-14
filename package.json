@@ -8,13 +8,13 @@
     "private": true,
     "license": "AGPL-3.0",
     "scripts": {
-        "yakumo": "node --import tsx/esm scripts/yakumo.js",
-        "build": "yarn yakumo build",
-        "bump": "yarn yakumo version",
-        "dep": "yarn yakumo upgrade",
-        "pub": "yarn yakumo publish",
+        "build": "yakumo build",
+        "bump": "yakumo version",
+        "dep": "yakumo upgrade",
+        "pub": "yakumo publish",
         "lint": "yarn eslint --ext=ts --cache",
-        "lint-fix": "yarn eslint --ext=ts --cache --fix"
+        "lint-fix": "yarn eslint --ext=ts --cache --fix",
+        "test": "yarn build && yarn yakumo mocha -r tsx/cjs"
     },
     "devDependencies": {
         "@langchain/core": "^0.3.30",
@@ -25,6 +25,7 @@
         "@types/node": "^20.17.14",
         "@typescript-eslint/eslint-plugin": "^7.18.1-alpha.3",
         "@typescript-eslint/parser": "^7.18.1-alpha.3",
+        "chai": "^5.1.2",
         "cross-env": "^7.0.3",
         "esbuild": "^0.23.1",
         "eslint": "^8.57.1",

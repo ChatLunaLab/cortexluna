@@ -3,7 +3,9 @@
     "compilerOptions": {
         "rootDir": "src",
         "outDir": "lib",
-        "stripInternal": true
+        "strictNullChecks": true,
+        "stripInternal": true,
+        "strict": true
     },
     "include": ["src"]
 }

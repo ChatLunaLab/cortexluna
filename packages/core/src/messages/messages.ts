@@ -1,33 +1,51 @@
 import { z } from 'zod'
 
 import {
+    MessageContent,
+    MessageContentSchema,
     Part,
-    PartSchema,
     TextPartSchema,
     ToolCallingPartSchema,
     ToolResultPartSchema
 } from './part.ts'
 
+export type MessageRole = 'user' | 'assistant' | 'system' | 'tool'
+
+export type InferMessageTypeByRole<T extends MessageRole> = T extends 'user'
+    ? UserMessage
+    : T extends 'assistant'
+      ? AssistantMessage
+      : T extends 'system'
+        ? SystemMessage
+        : T extends 'tool'
+          ? ToolMessage
+          : never
+
+export const MessageRoleSchema = z.union([
+    z.literal('user'),
+    z.literal('assistant'),
+    z.literal('system'),
+    z.literal('tool')
+])
+
 export interface BaseMessage {
-    role: string
-    content: string | Part[]
+    role: MessageRole
+    content: MessageContent
     name?: string
     id?: string
     metadata?: MessageMetadata
 }
 
 export const BaseMessageSchema = z.object({
-    role: z.union([
-        z.literal('user'),
-        z.literal('assistant'),
-        z.literal('system'),
-        z.literal('tool')
-    ]),
-    content: z.union([z.string(), z.array(PartSchema)]),
+    role: MessageRoleSchema,
+    content: MessageContentSchema,
     name: z.string().optional(),
     id: z.string().optional(),
     metadata: z.record(z.unknown()).optional()
 })
+
+export const BaseMessageLikeArraySchema: z.ZodType<BaseMessage[]> =
+    z.array(BaseMessageSchema)
 
 export interface BaseMessageChunk extends BaseMessage {
     chunk: true
@@ -105,24 +123,128 @@ export const ToolMessageChunkSchema = BaseMessageChunkSchema.extend({
         z.array(z.union([TextPartSchema, ToolResultPartSchema]))
     ])
 })
+export function concatChunks(...chunks: BaseMessageChunk[]): BaseMessageChunk {
+    // 预处理所有chunk的content为Part数组
+    const allParts: Part[] = []
+    let finalName: string | undefined
+    const role = chunks[0].role
+    let id: string | undefined
+    let concatToString = true
+    const mergedMetadata: Record<string, unknown> = {}
 
-export function concatChunks(...chunk: BaseMessageChunk[]): BaseMessage {
-    return chunk.reduce((acc, chunk) => {
-        BaseMessageChunkSchema.parse(chunk)
+    for (const chunk of chunks) {
+        const parsedChunk = BaseMessageChunkSchema.parse(chunk)
 
-        const newChunk: BaseMessageChunk = { ...acc }
+        // 处理content部分
+        const content = parsedChunk.content
+        if (typeof content === 'string') {
+            allParts.push({ type: 'text', text: content })
+        } else {
+            allParts.push(...content)
+            concatToString = false
+        }
 
-        newChunk.content =
-            typeof chunk.content === 'string'
-                ? newChunk.content + chunk.content
-                : _mergeLists(chunk.content, newChunk.content as Part[])
+        // 处理name（最后出现的非空name生效）
+        if (parsedChunk.name !== undefined) {
+            finalName = parsedChunk.name
+        }
 
-        // chechk metadata
+        // 合并metadata
+        if (parsedChunk.metadata) {
+            Object.assign(
+                mergedMetadata,
+                _mergeDicts(mergedMetadata, parsedChunk.metadata)
+            )
+        }
 
-        return newChunk
-    })
+        // 处理role（最后出现的非空role生效）
+        if (parsedChunk.role !== role) {
+            throw new Error(
+                `Cannot merge messages with different roles: ${role} and ${parsedChunk.role}`
+            )
+        }
+
+        // id
+        if (parsedChunk.id) {
+            id = parsedChunk.id
+        }
+    }
+
+    // 优化合并算法：线性遍历 + 尾合并策略
+    const mergedContent: Part[] = []
+    let lastPart: Part | null = null
+
+    for (const currentPart of allParts) {
+        if (lastPart && canMerge(lastPart, currentPart)) {
+            lastPart = mergeTwoParts(lastPart, currentPart)
+            mergedContent[mergedContent.length - 1] = lastPart
+        } else {
+            mergedContent.push(currentPart)
+            lastPart = currentPart
+        }
+    }
+
+    return {
+        content:
+            mergedContent.length === 1 &&
+            mergedContent[0].type === 'text' &&
+            concatToString
+                ? mergedContent[0].text
+                : mergedContent,
+        name: finalName,
+        chunk: true,
+        role,
+        id,
+        metadata: mergedMetadata
+    }
 }
 
+// 合并判断逻辑
+function canMerge(a: Part, b: Part): boolean {
+    if (a.type !== b.type) return false
+
+    if (a.type === 'text' && b.type === 'text') return true
+
+    if (a.type === 'tool-result' && b.type === 'tool-result') {
+        return a.toolCallId === b.toolCallId
+    }
+
+    return a.type === b.type
+}
+
+// 双元素合并逻辑
+function mergeTwoParts(a: Part, b: Part): Part {
+    if (a.type === 'text' && b.type === 'text') {
+        return { ...a, text: a.text + b.text }
+    }
+
+    if (a.type === 'tool-result' && b.type === 'tool-result') {
+        return {
+            ...a,
+            result: _mergeDicts(
+                a.result as Record<string, unknown>,
+                b.result as Record<string, unknown>
+            ),
+            isError: a.isError || b.isError
+        }
+    }
+
+    if (a.type === 'tool_calling' && b.type === 'tool_calling') {
+        return {
+            ...a,
+            args: _mergeDicts(
+                a.args as Record<string, unknown>,
+                b.args as Record<string, unknown>
+            )
+        }
+    }
+
+    if (a.type !== b.type) {
+        throw new Error(`Cannot merge parts of types ${a.type} and ${b.type}`)
+    }
+
+    return _mergeDicts(a, b) as Part
+}
 export function createMessageChunk<
     T extends BaseMessageChunk = BaseMessageChunk
 >(args: Omit<T, 'chunk'>): T {
