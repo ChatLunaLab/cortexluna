@@ -1,41 +1,16 @@
-# ChatLuna Adapters
+# CortexLuna
 
-ChatLuna 模型适配器项目。
+CortexLuna 是简易，轻量化的 LLM 框架。建设在 Cordis 之上，与 Langchain 有一些相近的 API。
 
-## 项目结构
-
-- [@chatluna/adapter-openai](./packages/openai/README.MD)
-
-  为 ChatLuna 提供 OpenAI 支持的适配器。
-
-## 用法
-
-### Requester
-
-```ts
-const requester = new OpenAIRequester({
-    apiKey: '',
-    apiEndpoint: 'https://api.openai.com/v1'
-})
-
-const messages = [new HumanMessage('What is the capital of France?')]
-
-const generation = await requester.completion({
-   input: messages,
-   model: 'gpt-3.5-turbo',
-   maxTokens: 100
-})
-
-console.log(generation.message.content)
-```
-
-### With Client (LangChain Model)
-
-### With Full Cordis Context (ChatLuna Platform Service, Requester Service)
+在设计上，CortexLuna 借鉴了 Langchain 和 Vercel AI SDK 的设计思路，并且在实现上也有一些借鉴。
 
 ## 致谢
 
-感谢 [LangChain](https://github.com/langchain-ai/langchainjs) 项目。本项目基于其进行二次封装。
+感谢以下开源项目：
+
+- [langchain/langchainjs](https://github.com/langchain-ai/langchainjs)
+- [vecel/ai](https://github.com/vercel)
+- [cordis](https://github.com/cordiverse/cordis)
 
 最后感谢所有 ChatLuna 的贡献者和用户，没有你们的支持，ChatLuna 就不会继续向前发展。
 

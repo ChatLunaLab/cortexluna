@@ -252,8 +252,6 @@ export class OpenAIRequester
                 .join('; ')
         }
 
-        console.log(this.config)
-
         return result
     }
 }
