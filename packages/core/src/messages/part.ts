@@ -49,19 +49,19 @@ export const FilePartSchema: z.ZodType<FilePart> = z.object({
     mine_type: z.string().optional()
 })
 
-export interface ToolCallingPart {
-    type: 'tool_calling'
-    toolCallId: string
+export interface ToolCallPart {
+    type: 'tool-call'
+    toolCallId?: string
     toolName: string
     args: unknown
 }
 
-export const ToolCallingPartSchema: z.ZodType<ToolCallingPart> = z.object({
-    type: z.literal('tool_calling'),
-    toolCallId: z.string(),
+export const ToolCallPartSchema: z.ZodType<ToolCallPart> = z.object({
+    type: z.literal('tool-call'),
+    toolCallId: z.string().optional(),
     toolName: z.string(),
     args: z.unknown()
-}) as z.ZodType<ToolCallingPart> // necessary bc args is optional on Zod type
+}) as z.ZodType<ToolCallPart> // necessary bc args is optional on Zod type
 
 /**
 Tool result content part of a prompt. It contains the result of the tool call with the matching ID.
@@ -69,11 +69,13 @@ Tool result content part of a prompt. It contains the result of the tool call wi
 export interface ToolResultPart {
     type: 'tool-result'
 
-    toolCallId: string
+    toolCallId?: string
 
     toolName: string
 
     result: unknown
+
+    arg?: unknown
 
     isError?: boolean
 }
@@ -92,7 +94,7 @@ export type Part =
     | ImagePart
     | AudioPart
     | FilePart
-    | ToolCallingPart
+    | ToolCallPart
     | ToolResultPart
 
 export type MessageContent = string | Part[]
@@ -103,7 +105,7 @@ export const PartSchema: z.ZodType<Part> = z.union([
     ImagePartSchema,
     AudioPartSchema,
     FilePartSchema,
-    ToolCallingPartSchema,
+    ToolCallPartSchema,
     ToolResultPartSchema
 ])
 

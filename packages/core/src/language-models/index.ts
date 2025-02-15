@@ -12,12 +12,8 @@ export interface LanguageModel {
         text?: string
         reasoning?: string
         finishReason: LanguageModelFinishReason
-        usage?: {
-            promptTokens: number
-            completionTokens: number
-            totalTokens: number
-            cachedTokens?: number
-        }
+        usage?: LanguageModelUsage
+        responseMetadata: LanguageResponseMetadata[]
         toolCalls?: LanguageModelToolCall[]
     }>
 
@@ -54,6 +50,7 @@ export type LanguageModelStreamResponseChunk =
     | {
           type: 'response-metadata'
           id?: string
+          responseType: 'text' | 'reasoning' | 'source' | 'tool-call'
           timestamp?: Date
           model?: string
       }
@@ -63,16 +60,25 @@ export type LanguageModelStreamResponseChunk =
     | {
           type: 'finish'
           finishReason: LanguageModelFinishReason
-          usage?: {
-              promptTokens: number
-              completionTokens: number
-              totalTokens: number
-              cachedTokens?: number
-          }
+          usage?: LanguageModelUsage
       }
 
     // error parts are streamed, allowing for multiple errors
     | { type: 'error'; error: unknown }
+
+export type LanguageModelUsage = {
+    promptTokens: number
+    completionTokens: number
+    totalTokens: number
+    cachedTokens?: number
+}
+
+export type LanguageResponseMetadata = {
+    id?: string
+    timestamp?: Date
+    model?: string
+    responseType: 'text' | 'reasoning' | 'source' | 'tool-call'
+}
 
 /**
  * A source that has been used as input to generate the response.
@@ -101,14 +107,14 @@ export type LanguageModelSource = {
 
 export type LanguageModelCallOptions = LanguageModelCallSettings & {
     prompt: BaseMessage[]
-    model?: string
+    modelId?: string
     tools?: LanguageModelTool[]
 }
 
 export interface LanguageModelToolCall {
     toolId?: string
-    toolName?: string
-    arguments?: string
+    toolName: string
+    arguments: string
 }
 
 /**
@@ -246,11 +252,28 @@ export type LanguageModelCallSettings = {
     /**
   Abort signal for cancelling the operation.
      */
-    singal?: AbortSignal
+    signal?: AbortSignal
 
     /**
   Additional HTTP headers to be sent with the request.
   Only applicable for HTTP-based providers.
      */
     headers?: Record<string, string | undefined>
+
+    /**
+     * Maximum number of retries for the request.
+     */
+    maxRetries?: number
+}
+
+export function addLanguageModelUsage(
+    usage1: LanguageModelUsage,
+    usage2: LanguageModelUsage
+): LanguageModelUsage {
+    return {
+        promptTokens: usage1.promptTokens + usage2.promptTokens,
+        cachedTokens: (usage1?.cachedTokens ?? 0) + (usage2?.cachedTokens ?? 0),
+        completionTokens: usage1.completionTokens + usage2.completionTokens,
+        totalTokens: usage1.totalTokens + usage2.totalTokens
+    }
 }

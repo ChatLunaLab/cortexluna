@@ -5,7 +5,7 @@ import {
     MessageContentSchema,
     Part,
     TextPartSchema,
-    ToolCallingPartSchema,
+    ToolCallPartSchema,
     ToolResultPartSchema
 } from './part.ts'
 
@@ -100,7 +100,7 @@ export const AssistantMessageSchema = BaseMessageSchema.extend({
     role: z.literal('assistant'),
     content: z.union([
         z.string(),
-        z.array(z.union([TextPartSchema, ToolCallingPartSchema]))
+        z.array(z.union([TextPartSchema, ToolCallPartSchema]))
     ])
 })
 
@@ -229,7 +229,7 @@ function mergeTwoParts(a: Part, b: Part): Part {
         }
     }
 
-    if (a.type === 'tool_calling' && b.type === 'tool_calling') {
+    if (a.type === 'tool-call' && b.type === 'tool-call') {
         return {
             ...a,
             args: _mergeDicts(

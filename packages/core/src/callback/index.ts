@@ -11,12 +11,12 @@ export interface Callback {
     ) => void
     onTextGenerated?: (output: string, meta?: Record<string, unknown>) => void
     onMeta?: (meta: Record<string, unknown>) => void
-    onStart?: (meta?: Record<string, unknown>) => void
-    onEnd?: (meta?: Record<string, unknown>) => void
+    onLLMStart?: (meta?: Record<string, unknown>) => void
+    onLLMEnd?: (meta?: Record<string, unknown>) => void
     onError?: (error: Error, meta?: Record<string, unknown>) => void
 }
 
-export class CallbackHandler {
+export class CallbackHandler implements Callback {
     private callbacks: Callback[]
 
     constructor(callbacks: Callback[] = []) {
@@ -63,15 +63,15 @@ export class CallbackHandler {
         })
     }
 
-    onStart(meta?: Record<string, unknown>) {
+    onLLMStart(meta?: Record<string, unknown>) {
         this.callbacks.forEach((callback) => {
-            callback.onStart?.(meta)
+            callback.onLLMStart?.(meta)
         })
     }
 
-    onEnd(meta?: Record<string, unknown>) {
+    onLLMEnd(meta?: Record<string, unknown>) {
         this.callbacks.forEach((callback) => {
-            callback.onEnd?.(meta)
+            callback.onLLMEnd?.(meta)
         })
     }
 

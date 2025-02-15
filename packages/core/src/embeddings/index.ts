@@ -7,7 +7,7 @@ export type EmbeddingModel = {
 
     doEmbed(options: {
         values: string[]
-        model?: string
+        modelId?: string
         signal?: AbortSignal
     }): PromiseLike<{
         embeddings: number[][]
