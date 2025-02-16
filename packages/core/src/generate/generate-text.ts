@@ -214,6 +214,7 @@ export async function generatateText({
     return result
 }
 
+// TODO: steps
 export interface GenerateTextResult {
     readonly text: string
 

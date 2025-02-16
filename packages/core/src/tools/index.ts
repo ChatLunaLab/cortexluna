@@ -41,7 +41,7 @@ export function tool<
     config: {
         name: string
         description: string
-        schema: z.ZodType<T>
+        schema?: z.ZodType<T>
         returnDirect?: boolean
     }
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -67,7 +67,7 @@ export function tool<
                 }
             }
 
-            const parsedArgs = config.schema.parse(args)
+            const parsedArgs = config.schema!.parse(args)
 
             return await func(parsedArgs)
         }
