@@ -1,5 +1,10 @@
+import { generatateText } from '../generate/index.ts'
 import { parseTemplate, renderTemplate } from './template.ts'
 import { InputValues, PartialValues } from './types.ts'
+import {
+    BaseMessagePromptTemplate,
+    BaseMessagesPromptTemplate
+} from './message.ts'
 
 // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-constraint, @typescript-eslint/no-explicit-any
 export interface BasePromptTemplate<T extends any = string> {
@@ -55,5 +60,34 @@ export function promptTemplate(template: string): BasePromptTemplate {
             return paritalPromptTemplate(this, values)
         },
         partialValues: undefined
+    }
+}
+
+export function bindPromptTemplate<T extends typeof generatateText>(
+    template:
+        | BasePromptTemplate
+        | BaseMessagePromptTemplate
+        | BaseMessagesPromptTemplate,
+    runFunction: T = generatateText as T
+) {
+    return async (
+        args: Omit<Parameters<typeof runFunction>[0], 'prompt'> & {
+            input: InputValues
+        }
+    ) => {
+        let prompt = await template.format(args.input)
+
+        if (typeof prompt === 'string') {
+            prompt = [
+                {
+                    role: 'user',
+                    content: prompt
+                }
+            ]
+        } else if (!Array.isArray(prompt)) {
+            prompt = [prompt]
+        }
+
+        return await runFunction({ ...args, prompt })
     }
 }

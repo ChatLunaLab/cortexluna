@@ -57,6 +57,7 @@ export async function generatateText({
     let returnDirectly = false
     const responseMessages: BaseMessage[] = []
     const metadata: LanguageResponseMetadata[] = []
+    const stepResults: StepResult[] = []
     let text = ''
 
     let usage: LanguageModelUsage = {
@@ -192,6 +193,21 @@ export async function generatateText({
             )
         }
 
+        stepResults.push({
+            text,
+            reasoning: currentModelResponse.reasoning,
+            toolCalls: currentToolCalls,
+            toolResults: currentToolResults,
+            finishReason: currentModelResponse.finishReason,
+            usage,
+            metadata,
+            sources: []
+        })
+
+        callback?.onTextGenerated?.(text, {
+            ...stepResults[stepResults.length - 1],
+            ...settings
+        })
         stepType = nextStepType
     } while (stepType !== 'done')
 
@@ -202,6 +218,7 @@ export async function generatateText({
         toolResults: currentToolResults,
         finishReason: currentModelResponse.finishReason,
         usage,
+        steps: stepResults,
         metadata,
         sources: []
     } satisfies GenerateTextResult
@@ -218,7 +235,27 @@ export async function generatateText({
 export interface GenerateTextResult {
     readonly text: string
 
-    readonly reasoning: string | undefined
+    readonly reasoning?: string | undefined
+
+    readonly sources: LanguageModelSource[]
+
+    readonly toolCalls: ToolCallPart[]
+
+    readonly toolResults: ToolResultPart[]
+
+    readonly finishReason: LanguageModelFinishReason
+
+    readonly usage: LanguageModelUsage
+
+    readonly metadata: LanguageResponseMetadata[]
+
+    readonly steps: StepResult[]
+}
+
+export interface StepResult {
+    readonly text: string
+
+    readonly reasoning?: string | undefined
 
     readonly sources: LanguageModelSource[]
 
