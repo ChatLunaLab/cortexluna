@@ -1,13 +1,17 @@
 import { EmbeddingModel } from '../embeddings/index.ts'
 import { LanguageModel } from '../language-models/index.ts'
+import { ProviderConfig } from './config.ts'
+import { ProviderPool } from 'cortexluna'
 
-export interface Provider {
+export interface Provider<T extends ProviderConfig = ProviderConfig> {
     name: string
     languageModel(modelId: string): LanguageModel
 
     textEmbeddingModel(modelId: string): EmbeddingModel
 
-    models(): Promise<ModelInfo[]>
+    models(): [ModelInfo[], Promise<ModelInfo[]>]
+
+    configPool?: ProviderPool<T>
 }
 
 export class DefaultProviderRegistry implements Provider {
@@ -89,17 +93,24 @@ export class DefaultProviderRegistry implements Provider {
         return model
     }
 
-    async models(): Promise<ModelInfo[]> {
+    models(): [ModelInfo[], Promise<ModelInfo[]>] {
         const result: ModelInfo[] = []
+        const promises: Promise<ModelInfo[]>[] = []
         for (const providerId in this.providers) {
             if (this._providerModels[providerId]) {
                 continue
             }
-            const models = await this.providers[providerId].models()
-            result.push(...models)
-            this._providerModels[providerId] = models
+            let [cacheModels, latestModels] =
+                this.providers[providerId].models()
+            result.push(...cacheModels)
+            this._providerModels[providerId] = cacheModels
+            latestModels = latestModels.then((models) => {
+                this._providerModels[providerId] = models
+                return models
+            })
+            promises.push(latestModels)
         }
-        return result
+        return [result, Promise.all(promises).then((models) => models.flat())]
     }
 }
 
@@ -119,3 +130,8 @@ export interface ModelInfo {
 
     costPerTokenOutput?: number
 }
+
+/**
+ * Fetch function type (standardizes the version of fetch used).
+ */
+export type FetchFunction = typeof globalThis.fetch

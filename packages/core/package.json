@@ -22,13 +22,13 @@
     "repository": {
         "type": "git",
         "url": "https://github.com/ChatLunaLab/cortexluna",
-        "directory": "packages/opencoreai"
+        "directory": "packages/core"
     },
     "license": "AGPL-3.0",
     "bugs": {
-        "url": "https://github.com/ChatLunaLab/adapters/issues"
+        "url": "https://github.com/ChatLunaLab/cortexluna/issues"
     },
-    "homepage": "https://github.com/ChatLunaLab/adapter/tree/main/packages/openai#readme",
+    "homepage": "https://github.com/ChatLunaLab/cortexluna/tree/main/packages/core#readme",
     "scripts": {
         "build": "atsc -b"
     },

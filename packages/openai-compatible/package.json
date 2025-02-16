@@ -1,6 +1,6 @@
 {
-    "name": "@chatluna/adapter-openai",
-    "description": "openai style api adapter for chatluna",
+    "name": "@cortexluna/openai-compatible",
+    "description": "openai style api provider for cortexluna",
     "version": "0.0.1",
     "main": "lib/index.cjs",
     "module": "lib/index.mjs",
@@ -22,13 +22,13 @@
     "repository": {
         "type": "git",
         "url": "https://github.com/ChatLunaLab/chatluna.git",
-        "directory": "packages/openai"
+        "directory": "packages/openai-compatible"
     },
     "license": "AGPL-3.0",
     "bugs": {
-        "url": "https://github.com/ChatLunaLab/adapters/issues"
+        "url": "https://github.com/ChatLunaLab/cortexluna/issues"
     },
-    "homepage": "https://github.com/ChatLunaLab/adapter/tree/main/packages/openai#readme",
+    "homepage": "https://github.com/ChatLunaLab/cortexluna/tree/main/packages/openai-compatible#readme",
     "scripts": {
         "build": "atsc -b"
     },
@@ -43,36 +43,32 @@
         "chatgpt",
         "gpt",
         "chatluna",
-        "adapter"
+        "provider"
     ],
     "dependencies": {
-        "@chatluna/core": "^0.0.1",
-        "@chatluna/utils": "^0.0.1",
-        "@langchain/core": "^0.3.30"
+        "cortexluna": "^0.0.1",
+        "zod": "3.24.2"
     },
     "devDependencies": {
         "atsc": "^2.1.0",
         "cordis": "^3.18.1"
     },
     "peerDependencies": {
-        "@chatluna/service": "^0.0.1",
+        "cortexluna": "^0.0.1",
         "cordis": "^3.18.1"
     },
     "peerDependenciesMeta": {
-        "@chatluna/service": {
-            "optional": true
-        },
         "cordis": {
             "optional": true
         }
     },
     "cordis": {
         "description": {
-            "zh": "ChatLuna OpenAI 风格 API 适配器"
+            "zh": "ChatLuna OpenAI 风格模型提供器"
         },
         "service": {
             "required": [
-                "chatluna_platform"
+                "llm"
             ]
         }
     }

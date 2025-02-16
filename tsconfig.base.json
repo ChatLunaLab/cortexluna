@@ -10,9 +10,10 @@
         "esModuleInterop": true,
         "emitDeclarationOnly": true,
         "allowImportingTsExtensions": true,
-        "strict": false,
-        "strictNullChecks": false,
         "noImplicitAny": false,
+        "strictNullChecks": true,
+        "stripInternal": true,
+        "strict": true,
         "sourceMap": true,
         "jsx": "react-jsx",
         "jsxImportSource": "@satorijs/element"

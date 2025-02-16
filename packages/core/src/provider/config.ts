@@ -15,16 +15,16 @@ type Strategy =
     | 'weighted-random'
     | 'fallback'
 
-interface ProviderState {
+interface ProviderState<T> {
     id: string
-    config: ProviderConfig
+    config: T
     currentConcurrent: number
     enabled: boolean
 }
 
-interface ProviderHandle {
+interface ProviderHandle<T> {
     id: string
-    config: ProviderConfig
+    config: T
     release: () => void
     disable: () => void
     enable: () => void
@@ -47,23 +47,36 @@ export function generateConfigId(config: ProviderConfig): string {
     return createHash('sha1').update(str).digest('hex')
 }
 
-export function createProviderPool(strategy: Strategy = 'round-robin') {
-    let providers: ProviderState[] = []
+export interface ProviderPool<T extends ProviderConfig = ProviderConfig> {
+    addProvider(config: T): void
+    disableProvider(id: string): void
+    enableProvider(id: string): void
+    removeProvider(id: string): void
+    getProvider(methodStrategy?: Strategy): ProviderHandle<T>
+    setProviderStatus(id: string, enabled: boolean): void
+    getStatus(): (ProviderState<T> & T)[]
+    setStrategy(newStrategy: Strategy): void
+}
+
+export function createProviderPool<T extends ProviderConfig = ProviderConfig>(
+    strategy: Strategy = 'round-robin'
+): ProviderPool<T> {
+    let providers: ProviderState<T>[] = []
     let rrIndex = 0
 
     const strategyHandlers = {
-        'round-robin': (available: ProviderState[]) => {
+        'round-robin': (available: ProviderState<T>[]) => {
             const index = rrIndex % available.length
             rrIndex = (rrIndex + 1) % available.length
             return available[index]
         },
-        random: (available: ProviderState[]) =>
+        random: (available: ProviderState<T>[]) =>
             available[Math.floor(Math.random() * available.length)],
-        'least-concurrent': (available: ProviderState[]) =>
+        'least-concurrent': (available: ProviderState<T>[]) =>
             available.reduce((prev, curr) =>
                 curr.currentConcurrent < prev.currentConcurrent ? curr : prev
             ),
-        'weighted-random': (available: ProviderState[]) => {
+        'weighted-random': (available: ProviderState<T>[]) => {
             const totalWeight = available.reduce(
                 (sum, p) => sum + (p.config.maxConcurrentRequests || 10),
                 0
@@ -77,7 +90,7 @@ export function createProviderPool(strategy: Strategy = 'round-robin') {
             }
             return available[0]
         },
-        fallback: (available: ProviderState[]) =>
+        fallback: (available: ProviderState<T>[]) =>
             available.find((p) => p.currentConcurrent === 0) || available[0]
     }
 
@@ -91,7 +104,7 @@ export function createProviderPool(strategy: Strategy = 'round-robin') {
     }
 
     return {
-        addProvider(config: ProviderConfig) {
+        addProvider(config: T) {
             const id = generateConfigId(config)
             if (!providers.some((p) => p.id === id)) {
                 providers.push({
@@ -117,7 +130,7 @@ export function createProviderPool(strategy: Strategy = 'round-robin') {
             providers = providers.filter((p) => p.id !== id)
         },
 
-        getProvider(methodStrategy: Strategy = strategy): ProviderHandle {
+        getProvider(methodStrategy: Strategy = strategy): ProviderHandle<T> {
             const available = getAvailableProviders()
             if (available.length === 0)
                 throw new Error('No available providers')
@@ -154,7 +167,7 @@ export function createProviderPool(strategy: Strategy = 'round-robin') {
                 enabled: p.enabled,
                 ...p.config,
                 currentConcurrent: p.currentConcurrent
-            }))
+            })) as (ProviderState<T> & T)[]
         },
 
         setStrategy(newStrategy: Strategy) {
