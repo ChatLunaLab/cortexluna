@@ -1,46 +1,50 @@
 import { expect } from 'chai'
 import {
-    createPromptTemplate,
     paritalPromptTemplate,
-    createMessagePromptTemplate,
-    createSystemMessagePromptTemplate,
-    createAssistantMessagePromptTemplate,
-    createUserMessagePromptTemplate,
-    createChatPromptTemplate,
-    createMessagesPlaceholderPromptTemplate,
-    BaseMessage
+    BaseMessagePromptTemplate,
+    systemMessagePromptTemplate,
+    assistantMessagePromptTemplate,
+    userMessagePromptTemplate,
+    chatPromptTemplate,
+    messagesPlaceholderPromptTemplate,
+    BaseMessage,
+    promptTemplate,
+    messagePromptTemplate
 } from '../src/index.ts'
 
 describe('Prompts', () => {
     describe('createPromptTemplate', () => {
         it('should create a prompt template with the given template string', async () => {
             const template = 'Hello, {name}!'
-            const promptTemplate = createPromptTemplate(template)
-            expect(promptTemplate.template).to.equal(template)
+            const parsedPromptTemplate = promptTemplate(template)
+            expect(parsedPromptTemplate.template).to.equal(template)
         })
 
         it('should format the prompt template with the given values', async () => {
             const template = 'Hello, {name}!'
-            const promptTemplate = createPromptTemplate(template)
+            const parsedPromptTemplate = promptTemplate(template)
             const values = { name: 'World' }
-            const formattedPrompt = await promptTemplate.format(values)
+            const formattedPrompt = await parsedPromptTemplate.format(values)
             expect(formattedPrompt).to.equal('Hello, World!')
         })
 
         it('should extract input variables from the template', () => {
             const template = 'Hello, {name}! My age is {age}.'
-            const promptTemplate = createPromptTemplate(template)
-            expect(promptTemplate.inputVariables).to.deep.equal(['name', 'age'])
+            const parsedPromptTemplate = promptTemplate(template)
+            expect(parsedPromptTemplate.inputVariables).to.deep.equal([
+                'name',
+                'age'
+            ])
         })
     })
 
     describe('paritalPromptTemplate', () => {
         it('should create a partial prompt template with the given values', async () => {
             const template = 'Hello, {name}! My age is {age}.'
-            const promptTemplate = createPromptTemplate(template)
+            const parsedPromptTemplate = promptTemplate(template)
             const partialValues = { age: 30 }
             const partialPromptTemplate = paritalPromptTemplate(
-                promptTemplate,
+                parsedPromptTemplate,
                 partialValues
             )
             const values = { name: 'World' }
@@ -50,10 +54,10 @@ describe('Prompts', () => {
 
         it('should merge partial values with the given values', async () => {
             const template = 'Hello, {name}! My age is {age}.'
-            const promptTemplate = createPromptTemplate(template)
+            const parsedPromptTemplate = promptTemplate(template)
             const partialValues = { age: 30 }
             const partialPromptTemplate = paritalPromptTemplate(
-                promptTemplate,
+                parsedPromptTemplate,
                 partialValues
             )
             const partialValues2 = { name: 'World' }
@@ -71,12 +75,13 @@ describe('Prompts', () => {
         it('should create a message prompt template with the given role and prompt', async () => {
             const role = 'user'
             const prompt = 'Hello, {name}!'
-            const messagePromptTemplate = createMessagePromptTemplate(
+            const parsedMessagePromptTemplate = messagePromptTemplate(
                 role,
                 prompt
             )
             const values = { name: 'World' }
-            const formattedMessage = await messagePromptTemplate.format(values)
+            const formattedMessage =
+                await parsedMessagePromptTemplate.format(values)
             expect(formattedMessage.role).to.equal(role)
             expect(formattedMessage.content).to.equal('Hello, World!')
         })
@@ -85,8 +90,7 @@ describe('Prompts', () => {
     describe('createSystemMessagePromptTemplate', () => {
         it('should create a system message prompt template with the given prompt', async () => {
             const prompt = 'Hello, {name}!'
-            const messagePromptTemplate =
-                createSystemMessagePromptTemplate(prompt)
+            const messagePromptTemplate = systemMessagePromptTemplate(prompt)
             const values = { name: 'World' }
             const formattedMessage = await messagePromptTemplate.format(values)
             expect(formattedMessage.role).to.equal('system')
@@ -97,8 +101,7 @@ describe('Prompts', () => {
     describe('createAssistantMessagePromptTemplate', () => {
         it('should create an assistant message prompt template with the given prompt', async () => {
             const prompt = 'Hello, {name}!'
-            const messagePromptTemplate =
-                createAssistantMessagePromptTemplate(prompt)
+            const messagePromptTemplate = assistantMessagePromptTemplate(prompt)
             const values = { name: 'World' }
             const formattedMessage = await messagePromptTemplate.format(values)
             expect(formattedMessage.role).to.equal('assistant')
@@ -109,10 +112,11 @@ describe('Prompts', () => {
     describe('createUserMessagePromptTemplate', () => {
         it('should create a user message prompt template with the given prompt', async () => {
             const prompt = 'Hello, {name}!'
-            const messagePromptTemplate =
-                createUserMessagePromptTemplate(prompt)
+            const parsedMessagePromptTemplate =
+                userMessagePromptTemplate(prompt)
             const values = { name: 'World' }
-            const formattedMessage = await messagePromptTemplate.format(values)
+            const formattedMessage =
+                await parsedMessagePromptTemplate.format(values)
             expect(formattedMessage.role).to.equal('user')
             expect(formattedMessage.content).to.equal('Hello, World!')
         })
@@ -124,9 +128,10 @@ describe('Prompts', () => {
                 ['user', 'Hello, {name}!'],
                 ['assistant', 'Hi, {name}!']
             ]
-            const chatPromptTemplate = createChatPromptTemplate(messages)
+            const parsedChatPromptTemplate = chatPromptTemplate(messages)
             const values = { name: 'World' }
-            const formattedMessages = await chatPromptTemplate.format(values)
+            const formattedMessages =
+                await parsedChatPromptTemplate.format(values)
             expect(formattedMessages.length).to.equal(2)
             expect(formattedMessages[0].role).to.equal('user')
             expect(formattedMessages[0].content).to.equal('Hello, World!')
@@ -136,12 +141,13 @@ describe('Prompts', () => {
 
         it('should create a chat prompt template with the given message prompt templates', async () => {
             const messages = [
-                createMessagePromptTemplate('user', 'Hello, {name}!'),
-                createMessagePromptTemplate('assistant', 'Hi, {name}!')
+                messagePromptTemplate('user', 'Hello, {name}!'),
+                messagePromptTemplate('assistant', 'Hi, {name}!')
             ]
-            const chatPromptTemplate = createChatPromptTemplate(messages)
+            const parsedChatPromptTemplate = chatPromptTemplate(messages)
             const values = { name: 'World' }
-            const formattedMessages = await chatPromptTemplate.format(values)
+            const formattedMessages =
+                await parsedChatPromptTemplate.format(values)
             expect(formattedMessages.length).to.equal(2)
             expect(formattedMessages[0].role).to.equal('user')
             expect(formattedMessages[0].content).to.equal('Hello, World!')
@@ -153,14 +159,15 @@ describe('Prompts', () => {
             const messages = [
                 ['user', 'Hello, {name}!'],
                 ['assistant', 'Hi, {name}!'],
-                createMessagesPlaceholderPromptTemplate('history')
+                messagesPlaceholderPromptTemplate('history')
             ]
-            const chatPromptTemplate = createChatPromptTemplate(messages)
+            const parsedChatPromptTemplate = chatPromptTemplate(messages)
             const values = {
                 name: 'World',
                 history: [{ role: 'user', content: 'How are you?' }]
             }
-            const formattedMessages = await chatPromptTemplate.format(values)
+            const formattedMessages =
+                await parsedChatPromptTemplate.format(values)
             expect(formattedMessages.length).to.equal(3)
             expect(formattedMessages[0].role).to.equal('user')
             expect(formattedMessages[0].content).to.equal('Hello, World!')
@@ -174,22 +181,19 @@ describe('Prompts', () => {
     describe('createMessagesPlaceholderPromptTemplate', () => {
         it('should create a messages placeholder prompt template with the given variable name', async () => {
             const variableName = 'messages'
-            const messagesPlaceholderPromptTemplate =
-                createMessagesPlaceholderPromptTemplate(variableName)
-            expect(
-                messagesPlaceholderPromptTemplate.inputVariables
-            ).to.deep.equal([variableName])
+            const promptTemplate =
+                messagesPlaceholderPromptTemplate(variableName)
+            expect(promptTemplate.inputVariables).to.deep.equal([variableName])
         })
 
         it('should format the messages placeholder prompt template with the given values', async () => {
             const variableName = 'messages'
-            const messagesPlaceholderPromptTemplate =
-                createMessagesPlaceholderPromptTemplate(variableName)
+            const promptTemplate =
+                messagesPlaceholderPromptTemplate(variableName)
             const values = {
                 messages: [{ role: 'user', content: 'Hello, World!' }]
             }
-            const formattedMessages =
-                await messagesPlaceholderPromptTemplate.format(values)
+            const formattedMessages = await promptTemplate.format(values)
             expect(formattedMessages.length).to.equal(1)
             expect(formattedMessages[0].role).to.equal('user')
             expect(formattedMessages[0].content).to.equal('Hello, World!')
@@ -197,11 +201,11 @@ describe('Prompts', () => {
 
         it('should throw an error if the variable name is not provided', async () => {
             const variableName = 'messages'
-            const messagesPlaceholderPromptTemplate =
-                createMessagesPlaceholderPromptTemplate(variableName)
+            const promptTemplate =
+                messagesPlaceholderPromptTemplate(variableName)
             const values = {}
             try {
-                await messagesPlaceholderPromptTemplate.format(values)
+                await promptTemplate.format(values)
             } catch (e: any) {
                 expect(e.message).to.equal(
                     `The MessagesPlaceholderPromptTemplate requires a value for ${variableName}.`
@@ -211,11 +215,12 @@ describe('Prompts', () => {
 
         it('should return an empty array if the variable name is not provided and optional is true', async () => {
             const variableName = 'messages'
-            const messagesPlaceholderPromptTemplate =
-                createMessagesPlaceholderPromptTemplate(variableName, true)
+            const promptTemplate = messagesPlaceholderPromptTemplate(
+                variableName,
+                true
+            )
             const values = {}
-            const formattedMessages =
-                await messagesPlaceholderPromptTemplate.format(values)
+            const formattedMessages = await promptTemplate.format(values)
             expect(formattedMessages.length).to.equal(0)
         })
     })

@@ -15,14 +15,14 @@ export const TextPartSchema: z.ZodType<TextPart> = z.object({
 export interface ImagePart {
     type: 'image'
     image: DataContent | URL
-    mine_type?: string
+    mineType?: string
 }
 
 /** @internal  */
 export const ImagePartSchema: z.ZodType<ImagePart> = z.object({
     type: z.literal('image'),
     image: DataContentSchema,
-    mine_type: z.string().optional()
+    mineType: z.string().optional()
 })
 
 export interface AudioPart {
@@ -39,14 +39,14 @@ export const AudioPartSchema: z.ZodType<AudioPart> = z.object({
 export interface FilePart {
     type: 'file'
     file: DataContent | URL
-    mine_type?: string
+    mineType?: string
 }
 
 /** @internal  */
 export const FilePartSchema: z.ZodType<FilePart> = z.object({
     type: z.literal('file'),
     file: DataContentSchema,
-    mine_type: z.string().optional()
+    mineType: z.string().optional()
 })
 
 export interface ToolCallPart {

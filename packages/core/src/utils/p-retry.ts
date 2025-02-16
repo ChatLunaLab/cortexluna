@@ -43,8 +43,8 @@ export function createRetry<Args extends any[], Return>(
     const {
         retries = 3,
         factor = 2,
-        minTimeout = 1000,
-        maxTimeout = Infinity,
+        minTimeout = 1000 * 120,
+        maxTimeout = 1000 * 300,
         onRetry = () => {},
         shouldRetry = () => true
     } = options

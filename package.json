@@ -14,7 +14,7 @@
         "pub": "yakumo publish",
         "lint": "yarn eslint --ext=ts --cache",
         "lint-fix": "yarn eslint --ext=ts --cache --fix",
-        "test": "yarn build && yarn yakumo mocha -r tsx/cjs"
+        "test": "yarn build && yarn cross-env yakumo mocha -r tsx/cjs"
     },
     "devDependencies": {
         "@langchain/core": "^0.3.30",

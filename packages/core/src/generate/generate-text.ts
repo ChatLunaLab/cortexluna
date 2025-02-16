@@ -25,7 +25,7 @@ export async function generatateText({
     signal,
     tools,
     ...settings
-}: Omit<LanguageModelCallOptions, 'tools'> & {
+}: Omit<LanguageModelCallOptions, 'tools' | 'prompt'> & {
     model: LanguageModel
     prompt: BaseMessage[] | string
     callback?: Callback

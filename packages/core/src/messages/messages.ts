@@ -4,8 +4,11 @@ import {
     MessageContent,
     MessageContentSchema,
     Part,
+    TextPart,
     TextPartSchema,
+    ToolCallPart,
     ToolCallPartSchema,
+    ToolResultPart,
     ToolResultPartSchema
 } from './part.ts'
 
@@ -28,101 +31,144 @@ export const MessageRoleSchema = z.union([
     z.literal('tool')
 ])
 
-export interface BaseMessage {
-    role: MessageRole
-    content: MessageContent
-    name?: string
-    id?: string
-    metadata?: MessageMetadata
-}
+export type BaseMessage =
+    | UserMessage
+    | AssistantMessage
+    | SystemMessage
+    | ToolMessage
 
-export const BaseMessageSchema = z.object({
-    role: MessageRoleSchema,
-    content: MessageContentSchema,
-    name: z.string().optional(),
-    id: z.string().optional(),
-    metadata: z.record(z.unknown()).optional()
-})
-
-export const BaseMessageLikeArraySchema: z.ZodType<BaseMessage[]> =
-    z.array(BaseMessageSchema)
-
-export interface BaseMessageChunk extends BaseMessage {
-    chunk: true
-}
-
-/** @internal  */
-export const BaseMessageChunkSchema = BaseMessageSchema.extend({
-    chunk: z.literal(true)
-})
+export type BaseMessageChunk =
+    | UserMessageChunk
+    | AssistantMessageChunk
+    | SystemMessageChunk
+    | ToolMessageChunk
 
 export interface MessageMetadata {
     [key: string]: unknown
 }
 
-export interface UserMessage extends BaseMessage {
+export interface UserMessage {
     role: 'user'
+    content: MessageContent
+    id?: string
+    name?: string
+    metadata?: MessageMetadata
 }
 
-export const UserMessageSchema = BaseMessageSchema.extend({
-    role: z.literal('user')
+export const UserMessageSchema = z.object({
+    role: z.literal('user'),
+    id: z.string().optional(),
+    name: z.string().optional(),
+    metadata: z.record(z.unknown()).optional(),
+    content: MessageContentSchema
 })
 
-export interface UserMessageChunk extends BaseMessageChunk {
-    role: 'user'
+export interface UserMessageChunk extends UserMessage {
+    chunk: true
 }
 
-export const UserMessageChunkSchema = BaseMessageChunkSchema.extend({
-    role: z.literal('user')
+export const UserMessageChunkSchema = UserMessageSchema.extend({
+    chunk: z.literal(true)
 })
 
-export interface SystemMessage extends BaseMessage {
+export interface SystemMessage {
+    role: 'system'
+    content: string
+    id?: string
+    name?: string
+    metadata?: MessageMetadata
+}
+
+export const SystemMessageSchema = z.object({
+    role: z.literal('system'),
+    content: z.string(),
+    id: z.string().optional(),
+    name: z.string().optional(),
+    metadata: z.record(z.unknown()).optional()
+})
+
+export interface SystemMessageChunk extends SystemMessage {
     role: 'system'
 }
 
-export const SystemMessageSchema = BaseMessageSchema.extend({
-    role: z.literal('system')
+export const SystemMessageChunkSchema = SystemMessageSchema.extend({
+    chunk: z.literal(true)
 })
 
-export interface SystemMessageChunk extends BaseMessageChunk {
-    role: 'system'
-}
-
-export const SystemMessageChunkSchema = BaseMessageChunkSchema.extend({
-    role: z.literal('system')
-})
-
-export interface AssistantMessage extends BaseMessage {
+export interface AssistantMessage {
     role: 'assistant'
+    content: string | (ToolCallPart | TextPart)[]
+    id?: string
+    name?: string
+    metadata?: MessageMetadata
 }
 
-export const AssistantMessageSchema = BaseMessageSchema.extend({
+export const AssistantMessageSchema = z.object({
     role: z.literal('assistant'),
     content: z.union([
         z.string(),
-        z.array(z.union([TextPartSchema, ToolCallPartSchema]))
-    ])
+        z.array(z.union([ToolCallPartSchema, TextPartSchema]))
+    ]),
+    id: z.string().optional(),
+    name: z.string().optional(),
+    metadata: z.record(z.unknown()).optional()
 })
 
-export interface ToolMessage extends BaseMessage {
-    role: 'tool'
+export interface AssistantMessageChunk extends AssistantMessage {
+    chunk: true
 }
 
-export const ToolMessageSchema = BaseMessageSchema.extend({
-    role: z.literal('tool')
+export const AssistantMessageChunkSchema = AssistantMessageSchema.extend({
+    chunk: z.literal(true)
 })
 
-export interface ToolMessageChunk extends BaseMessageChunk {
+export interface ToolMessage {
     role: 'tool'
+    content: ToolResultPart[]
+    id?: string
+    name?: string
+    metadata?: MessageMetadata
 }
 
-export const ToolMessageChunkSchema = BaseMessageChunkSchema.extend({
+export const ToolMessageSchema = z.object({
     role: z.literal('tool'),
-    content: z.union([
-        z.string(),
-        z.array(z.union([TextPartSchema, ToolResultPartSchema]))
-    ])
+    content: z.array(ToolResultPartSchema),
+    id: z.string().optional(),
+    name: z.string().optional(),
+    metadata: z.record(z.unknown()).optional()
 })
+
+export interface ToolMessageChunk extends ToolMessage {
+    chunk: true
+}
+
+export const ToolMessageChunkSchema = z.object({
+    role: z.literal('tool'),
+    chunk: z.literal(true),
+    content: z.array(ToolResultPartSchema),
+    id: z.string().optional(),
+    name: z.string().optional(),
+    metadata: z.record(z.unknown()).optional()
+})
+
+export const BaseMessageSchema = z.union([
+    UserMessageSchema,
+    AssistantMessageSchema,
+    SystemMessageSchema,
+    ToolMessageSchema
+])
+
+export const BaseMessageLikeArraySchema: z.ZodType<BaseMessage[]> =
+    z.array(BaseMessageSchema)
+
+/** @internal  */
+export const BaseMessageChunkSchema = z.union([
+    UserMessageChunkSchema,
+    AssistantMessageChunkSchema,
+    SystemMessageChunkSchema,
+    ToolMessageChunkSchema
+])
+
 export function concatChunks(...chunks: BaseMessageChunk[]): BaseMessageChunk {
     // 预处理所有chunk的content为Part数组
     const allParts: Part[] = []
@@ -196,7 +242,7 @@ export function concatChunks(...chunks: BaseMessageChunk[]): BaseMessageChunk {
         role,
         id,
         metadata: mergedMetadata
-    }
+    } as BaseMessageChunk
 }
 
 // 合并判断逻辑

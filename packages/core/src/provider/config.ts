@@ -59,7 +59,8 @@ export interface ProviderPool<T extends ProviderConfig = ProviderConfig> {
 }
 
 export function createProviderPool<T extends ProviderConfig = ProviderConfig>(
-    strategy: Strategy = 'round-robin'
+    strategy: Strategy = 'round-robin',
+    name?: string
 ): ProviderPool<T> {
     let providers: ProviderState<T>[] = []
     let rrIndex = 0
@@ -133,7 +134,7 @@ export function createProviderPool<T extends ProviderConfig = ProviderConfig>(
         getProvider(methodStrategy: Strategy = strategy): ProviderHandle<T> {
             const available = getAvailableProviders()
             if (available.length === 0)
-                throw new Error('No available providers')
+                throw new Error(`No available providers for ${name}`)
 
             const selected = strategyHandlers[methodStrategy](available)
             selected.currentConcurrent++
@@ -174,4 +175,19 @@ export function createProviderPool<T extends ProviderConfig = ProviderConfig>(
             strategy = newStrategy
         }
     }
+}
+
+export function isProviderPool(obj: unknown): obj is ProviderPool {
+    return (
+        typeof obj === 'object' &&
+        obj !== null &&
+        'addProvider' in obj &&
+        'disableProvider' in obj &&
+        'enableProvider' in obj &&
+        'removeProvider' in obj &&
+        'getProvider' in obj &&
+        'setProviderStatus' in obj &&
+        'getStatus' in obj &&
+        'setStrategy' in obj
+    )
 }

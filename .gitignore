@@ -28,3 +28,6 @@ packages/*/lib
 
 coverage
 test/
+
+.env
+.env.*

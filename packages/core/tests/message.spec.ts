@@ -19,7 +19,7 @@ import {
     ImagePart,
     Part,
     TextPart,
-    ToolCallingPart,
+    ToolCallPart,
     ToolResultPart
 } from '../src/messages/part'
 
@@ -127,7 +127,9 @@ describe('messages', () => {
         it('should merge nested dictionaries', () => {
             const left = { a: { b: 1 } }
             const right = { a: { c: 2 } }
-            expect(_mergeDicts(left, right)).to.deep.equal({ a: { b: 1, c: 2 } })
+            expect(_mergeDicts(left, right)).to.deep.equal({
+                a: { b: 1, c: 2 }
+            })
         })
 
         it('should throw error when nested dictionaries have different types', () => {
@@ -178,7 +180,7 @@ describe('messages', () => {
         it('should merge two dictionaries', () => {
             const left = { a: 1 }
             const right = { b: 2 }
-            expect(_mergeObj<any>(left, right).to.deep.equal({ a: 1, b: 2 }))
+            expect(_mergeDicts(left, right).to.deep.equal({ a: 1, b: 2 }))
         })
 
         it('should return left if right is undefined', () => {
@@ -237,17 +239,19 @@ describe('part', () => {
             file: 'data:application/pdf;base64,JVBERi0xLjUKJcfsxw=='
         }
         expect(filePart.type).to.equal('file')
-        expect(filePart.file).to.equal('data:application/pdf;base64,JVBERi0xLjUKJcfsxw==')
+        expect(filePart.file).to.equal(
+            'data:application/pdf;base64,JVBERi0xLjUKJcfsxw=='
+        )
     })
 
     it('ToolCallingPartSchema should have type tool_calling, toolCallId, toolName and args', () => {
-        const toolCallingPart: ToolCallingPart = {
-            type: 'tool_calling',
+        const toolCallingPart: ToolCallPart = {
+            type: 'tool-call',
             toolCallId: '123',
             toolName: 'test',
             args: { a: 1 }
         }
-        expect(toolCallingPart.type).to.equal('tool_calling')
+        expect(toolCallingPart.type).to.equal('tool-call')
         expect(toolCallingPart.toolCallId).to.equal('123')
         expect(toolCallingPart.toolName).to.equal('test')
         expect(toolCallingPart.args).to.deep.equal({ a: 1 })

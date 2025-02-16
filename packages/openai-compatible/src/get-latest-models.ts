@@ -26,7 +26,8 @@ export async function getLatestModels(
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
-                Authorization: `Bearer ${config.apiKey}`
+                Authorization: `Bearer ${config.apiKey}`,
+                ...(config.headers ?? {})
             }
         }).then((res) => res.text())
 
@@ -63,6 +64,7 @@ export async function getLatestModels(
 
     const retry = createRetry(latestModels, {
         retries: currentConfig.config.maxRetries,
+        maxTimeout: currentConfig.config.timeout,
         onRetry(error, attempt, retryInfo) {
             console.log(`Retry attempt ${attempt} failed with error: ${error}`)
             currentConfig.disable()

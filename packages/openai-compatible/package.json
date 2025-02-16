@@ -54,8 +54,8 @@
         "cordis": "^3.18.1"
     },
     "peerDependencies": {
-        "cortexluna": "^0.0.1",
-        "cordis": "^3.18.1"
+        "cordis": "^3.18.1",
+        "cortexluna": "^0.0.1"
     },
     "peerDependenciesMeta": {
         "cordis": {

@@ -264,6 +264,11 @@ export type LanguageModelCallSettings = {
      * Maximum number of retries for the request.
      */
     maxRetries?: number
+
+    /**
+     * Other metadata for provider
+     */
+    metadata?: Record<string, unknown>
 }
 
 export function addLanguageModelUsage(
