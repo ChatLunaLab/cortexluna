@@ -146,7 +146,9 @@ Default and recommended: 'auto' (best mode for the model).
                         ? {
                               type: 'json',
                               // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                              schema: zodToJsonSchema(schema) as any
+                              schema: zodToJsonSchema(schema) as any,
+                              name: schemaName,
+                              description: schemaDescription
                           }
                         : undefined,
                 ...settings

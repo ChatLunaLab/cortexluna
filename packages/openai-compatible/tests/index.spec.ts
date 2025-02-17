@@ -2,11 +2,13 @@ import { expect } from 'chai'
 import { openaiCompatible } from '../src/provider'
 import {
     bindPromptTemplate,
+    bindPromptTemplateToObject,
+    generatateObject,
     generatateText,
     promptTemplate,
     tool
 } from 'cortexluna'
-import { z } from 'zod'
+import { z, ZodSchema } from 'zod'
 
 describe('Chat', () => {
     describe('test chat', () => {
@@ -15,7 +17,7 @@ describe('Chat', () => {
             return new Promise(async (resolve, reject) => {
                 const { text, usage, finishReason } = await generatateText({
                     model: openaiCompatible('gemini-2.0-flash'),
-                    prompt: '讲一个程序员笑话'
+                    prompt: 'Talk a joke about programming'
                 })
 
                 console.log(text, usage, finishReason)
@@ -80,6 +82,32 @@ describe('Chat', () => {
 
                 console.log(text, usage, finishReason, steps)
 
+                resolve()
+            })
+        })
+
+        it('should chat with object result', async function () {
+            this.timeout(100000)
+            return new Promise(async (resolve, reject) => {
+                const objectSchema = z.object({
+                    keywords: z.array(z.string())
+                })
+
+                const prompt = promptTemplate(
+                    'Extract keywords from this text: "{text}"'
+                )
+
+                const chain =
+                    bindPromptTemplateToObject<z.infer<typeof objectSchema>>(
+                        prompt
+                    )
+
+                const { object, usage, finishReason } = await chain({
+                    model: openaiCompatible('gpt-4o-mini'),
+                    input: 'The quick brown fox jumps over the lazy dog',
+                    schema: objectSchema
+                })
+                console.log(object, usage, finishReason)
                 resolve()
             })
         })

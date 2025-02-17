@@ -65,7 +65,8 @@ export function promptTemplate(template: string): BasePromptTemplate {
 }
 
 export function bindPromptTemplate<
-    T extends typeof generatateText | typeof generatateObject
+    T extends typeof generatateText | typeof generatateObject<R>,
+    R = unknown
 >(
     template:
         | BasePromptTemplate
@@ -73,12 +74,27 @@ export function bindPromptTemplate<
         | BaseMessagesPromptTemplate,
     runFunction: T = generatateText as T
 ) {
-    return async (
+    return async function (
         args: Omit<Parameters<T>[0], 'prompt'> & {
-            input: InputValues
+            input: InputValues | string
         }
-    ) => {
-        let prompt = await template.format(args.input)
+    ): Promise<ReturnType<T>> {
+        const inputValues =
+            typeof args.input === 'string'
+                ? {
+                      [template.inputVariables[0]]: args.input
+                  }
+                : args.input
+
+        if (template.inputVariables.length > 1 && args.input === 'string') {
+            throw new Error(
+                `(bindPromptTemplate) Input ${args.input} is not an object. Need to provide an object with the following keys: ${template.inputVariables.join(
+                    ', '
+                )}`
+            )
+        }
+
+        let prompt = await template.format(inputValues)
 
         if (typeof prompt === 'string') {
             prompt = [
@@ -92,6 +108,18 @@ export function bindPromptTemplate<
         }
 
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        return await runFunction({ ...args, prompt } as any)
+        return (await runFunction({ ...args, prompt } as any)) as ReturnType<T>
     }
+}
+
+export function bindPromptTemplateToObject<T>(
+    template:
+        | BasePromptTemplate
+        | BaseMessagePromptTemplate
+        | BaseMessagesPromptTemplate
+) {
+    return bindPromptTemplate<typeof generatateObject<T>, T>(
+        template,
+        generatateObject
+    )
 }

@@ -18,6 +18,7 @@ import {
 } from './provider.ts'
 import { convertToOpenAICompatibleChatMessages } from './convert-to-openai-compatible-chat-messages.ts'
 import { z } from 'zod'
+import { removeAdditionalProperties } from './utils.ts'
 
 export class OpenAICompatibleLanguageModel implements LanguageModel {
     model: string = ''
@@ -60,7 +61,9 @@ export class OpenAICompatibleLanguageModel implements LanguageModel {
                     ? {
                           type: 'json_schema',
                           json_schema: {
-                              schema: options.responseFormat.schema,
+                              schema: removeAdditionalProperties(
+                                  options.responseFormat.schema
+                              ),
                               name: options.responseFormat.name ?? 'response',
                               description: options.responseFormat.description
                           }
@@ -70,7 +73,19 @@ export class OpenAICompatibleLanguageModel implements LanguageModel {
             stop: options.stopToken,
             seed: options.seed ?? this.settings.seed,
             ...(options.metadata ?? {}),
-            tools: options.tools,
+            tools:
+                options.tools == null
+                    ? undefined
+                    : options.tools?.map((tool) => ({
+                          type: 'function',
+                          function: {
+                              name: tool.function.name,
+                              description: tool.function.description,
+                              parameters: removeAdditionalProperties(
+                                  tool.function.parameters
+                              )
+                          }
+                      })),
 
             // messages:
             messages: convertToOpenAICompatibleChatMessages(options.prompt)
@@ -181,7 +196,12 @@ export class OpenAICompatibleLanguageModel implements LanguageModel {
     doStream(
         options: LanguageModelCallOptions
     ): PromiseLike<ReadableStream<LanguageModelStreamResponseChunk>> {
-        throw new Error('Method not implemented.')
+        const args = this.getChatRequest({
+            ...options,
+            stream: true
+        })
+
+        throw new Error('Not implemented')
     }
 
     private get providerConfig(): OpenAICompatibleProviderConfig {
@@ -223,6 +243,46 @@ const OpenAICompatibleChatResponseSchema = z.object({
             prompt_tokens: z.number(),
             completion_tokens: z.number(),
 
+            prompt_tokens_details: z
+                .object({
+                    cached_tokens: z.number()
+                })
+                .nullish()
+        })
+        .nullish()
+})
+
+const OpenAICompatibleStreamChunkSchema = z.object({
+    id: z.string().nullish(),
+    created: z.number().nullish(),
+    model: z.string().nullish(),
+    choices: z
+        .array(
+            z.object({
+                delta: z.object({
+                    role: z.literal('assistant').nullish(),
+                    content: z.string().nullish(),
+                    tool_calls: z
+                        .array(
+                            z.object({
+                                id: z.string().nullish(),
+                                type: z.literal('function'),
+                                function: z.object({
+                                    name: z.string(),
+                                    arguments: z.string()
+                                })
+                            })
+                        )
+                        .nullish()
+                }),
+                finish_reason: z.string().nullish()
+            })
+        )
+        .nullish(),
+    usage: z
+        .object({
+            prompt_tokens: z.number(),
+            completion_tokens: z.number(),
             prompt_tokens_details: z
                 .object({
                     cached_tokens: z.number()
