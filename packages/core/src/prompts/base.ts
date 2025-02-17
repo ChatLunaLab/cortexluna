@@ -5,6 +5,7 @@ import {
     BaseMessagePromptTemplate,
     BaseMessagesPromptTemplate
 } from './message.ts'
+import { generatateObject } from '../generate/generate-object.ts'
 
 // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-constraint, @typescript-eslint/no-explicit-any
 export interface BasePromptTemplate<T extends any = string> {
@@ -63,7 +64,9 @@ export function promptTemplate(template: string): BasePromptTemplate {
     }
 }
 
-export function bindPromptTemplate<T extends typeof generatateText>(
+export function bindPromptTemplate<
+    T extends typeof generatateText | typeof generatateObject
+>(
     template:
         | BasePromptTemplate
         | BaseMessagePromptTemplate
@@ -71,7 +74,7 @@ export function bindPromptTemplate<T extends typeof generatateText>(
     runFunction: T = generatateText as T
 ) {
     return async (
-        args: Omit<Parameters<typeof runFunction>[0], 'prompt'> & {
+        args: Omit<Parameters<T>[0], 'prompt'> & {
             input: InputValues
         }
     ) => {
@@ -88,6 +91,7 @@ export function bindPromptTemplate<T extends typeof generatateText>(
             prompt = [prompt]
         }
 
-        return await runFunction({ ...args, prompt })
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        return await runFunction({ ...args, prompt } as any)
     }
 }
