@@ -6,6 +6,7 @@ import {
     generatateObject,
     generatateText,
     promptTemplate,
+    streamText,
     tool
 } from 'cortexluna'
 import { z, ZodSchema } from 'zod'
@@ -16,7 +17,7 @@ describe('Chat', () => {
             this.timeout(100000)
             return new Promise(async (resolve, reject) => {
                 const { text, usage, finishReason } = await generatateText({
-                    model: openaiCompatible('gemini-2.0-flash'),
+                    model: openaiCompatible('gemini-2.0-flash-lite-preview'),
                     prompt: 'Talk a joke about programming'
                 })
 
@@ -37,7 +38,7 @@ describe('Chat', () => {
 
                 const chain = bindPromptTemplate(prompt, generatateText)
                 const { text, usage, finishReason } = await chain({
-                    model: openaiCompatible('gemini-2.0-flash'),
+                    model: openaiCompatible('gemini-2.0-flash-lite-preview'),
                     input: {
                         time: new Date().toLocaleString(),
                         question: 'what time is it'
@@ -57,7 +58,7 @@ describe('Chat', () => {
             return new Promise(async (resolve, reject) => {
                 const { text, usage, finishReason, steps } =
                     await generatateText({
-                        model: openaiCompatible('gemini-2.0-flash'),
+                        model: openaiCompatible('gemini-2.0-flash-lite-preview'),
                         prompt: 'Query the current weather in Beijing, China',
                         tools: [
                             tool(
@@ -109,6 +110,22 @@ describe('Chat', () => {
                 })
                 console.log(object, usage, finishReason)
                 resolve()
+            })
+        })
+
+        it('should stream chat', function () {
+            this.timeout(100000)
+            return new Promise(async (resolve, reject) => {
+                console.log(1)
+                const { textStream, text } = streamText({
+                    model: openaiCompatible('gemini-2.0-flash-lite-preview'),
+                    prompt: 'Talk a joke about programming'
+                })
+                for await (const text of textStream) {
+                    console.log(text)
+                }
+                console.log(await text)
+                resolve(0)
             })
         })
     })

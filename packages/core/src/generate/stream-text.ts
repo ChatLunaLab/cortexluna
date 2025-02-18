@@ -1,5 +1,6 @@
 import { Callback } from '../callback/index.ts'
 import {
+    addLanguageModelUsage,
     LanguageModel,
     LanguageModelCallOptions,
     LanguageModelFinishReason,
@@ -106,6 +107,7 @@ export function streamText({
     const languageModelTools = formatToolsToLanguageModelTools(tools ?? [])
 
     async function handleStreamPart(value: TextStreamPart) {
+        console.log(value)
         switch (value.type) {
             case 'text-delta':
                 state.fullText += value.textDelta
@@ -114,6 +116,7 @@ export function streamText({
                     state.currentStepState === 'initial'
                         ? 'continue'
                         : state.currentStepState
+
                 await writer.write(value)
                 break
             case 'reasoning':
@@ -207,6 +210,7 @@ export function streamText({
                         content: messageContent
                     })
                 }
+
                 await writer.write(value)
 
                 state.steps.push({
@@ -226,7 +230,11 @@ export function streamText({
                 break
             case 'finish':
                 state.finishReason = value.finishReason
-                state.usage = value.usage
+                if (value.usage) {
+                    state.usage = state.usage
+                        ? addLanguageModelUsage(state.usage, value.usage)
+                        : value.usage
+                }
                 state.currentStepState = 'done'
                 await writer.write(value)
                 break
@@ -238,10 +246,14 @@ export function streamText({
                 throw value.error
         }
 
-        let currentPartType: 'reasoning' | 'source' | 'tool-call' | 'text' =
-            'text'
+        let currentPartType:
+            | 'reasoning'
+            | 'source'
+            | 'tool-call'
+            | 'text'
+            | '' = ''
 
-        if (value.type === 'tool-result') {
+        if (value.type === 'tool-result' || value.type === 'tool-call') {
             currentPartType = 'tool-call'
         } else if (value.type === 'text-delta') {
             currentPartType = 'text'
@@ -257,7 +269,8 @@ export function streamText({
                 metadata: {
                     timestamp: new Date(),
                     model: settings.modelId ?? model.model,
-                    responseType: currentPartType
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    responseType: currentPartType as any
                 }
             } satisfies TextStreamPart
             writer.write(metadata)
@@ -272,9 +285,8 @@ export function streamText({
         }
         try {
             while (
-                state.currentStep < maxSteps &&
                 state.currentStepState !== 'done' &&
-                !signal?.aborted
+                !(signal?.aborted ?? false)
             ) {
                 callback?.onLLMStart?.({
                     messages: formattedPrompt,
@@ -300,8 +312,11 @@ export function streamText({
                 })
 
                 try {
-                    while (!signal?.aborted) {
+                    console.log('0', !(signal?.aborted ?? false))
+                    while (!(signal?.aborted ?? false)) {
+                        console.log('0.5', !(signal?.aborted ?? false))
                         const { done, value } = await reader.read()
+                        console.log('1', done, value)
                         if (done) break
 
                         await handleStreamPart(value)
@@ -318,6 +333,7 @@ export function streamText({
                                     callback
                                 })
                             state.toolResults = toolResults
+                            state.currentStep += 1
                             state.currentStepState = returnDirectly
                                 ? 'done'
                                 : 'continue'

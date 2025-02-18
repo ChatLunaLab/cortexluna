@@ -30,3 +30,12 @@ function removeProperties(
     properties[key] = removeAdditionalProperties(properties[key])
     removeProperties(properties, keys, index + 1)
 }
+
+export function isParsableJson(obj: string) {
+    try {
+        JSON.parse(obj)
+        return true
+    } catch (e) {
+        return false
+    }
+}

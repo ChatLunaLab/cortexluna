@@ -45,6 +45,7 @@
         "adapter"
     ],
     "dependencies": {
+        "eventsource-parser": "^3.0.0",
         "zod": "^3.24.2",
         "zod-to-json-schema": "^3.22.1"
     },

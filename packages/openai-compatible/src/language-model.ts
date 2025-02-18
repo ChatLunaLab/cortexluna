@@ -1,5 +1,6 @@
 import {
     BaseMessage,
+    createEventSourceResponseHandler,
     createRetry,
     isProviderPool,
     LanguageModel,
@@ -10,6 +11,7 @@ import {
     LanguageModelToolCall,
     LanguageModelUsage,
     LanguageResponseMetadata,
+    ParseResult,
     ProviderPool
 } from 'cortexluna'
 import {
@@ -18,7 +20,7 @@ import {
 } from './provider.ts'
 import { convertToOpenAICompatibleChatMessages } from './convert-to-openai-compatible-chat-messages.ts'
 import { z } from 'zod'
-import { removeAdditionalProperties } from './utils.ts'
+import { isParsableJson, removeAdditionalProperties } from './utils.ts'
 
 export class OpenAICompatibleLanguageModel implements LanguageModel {
     model: string = ''
@@ -88,7 +90,8 @@ export class OpenAICompatibleLanguageModel implements LanguageModel {
                       })),
 
             // messages:
-            messages: convertToOpenAICompatibleChatMessages(options.prompt)
+            messages: convertToOpenAICompatibleChatMessages(options.prompt),
+            stream: options.stream ?? false
         }
     }
 
@@ -193,15 +196,272 @@ export class OpenAICompatibleLanguageModel implements LanguageModel {
         }
     }
 
-    doStream(
+    async doStream(
         options: LanguageModelCallOptions
-    ): PromiseLike<ReadableStream<LanguageModelStreamResponseChunk>> {
-        const args = this.getChatRequest({
-            ...options,
-            stream: true
-        })
+    ): Promise<ReadableStream<LanguageModelStreamResponseChunk>> {
+        const args = Object.assign(
+            this.getChatRequest({
+                ...options,
+                stream: true
+            }),
+            { include_usage: true }
+        )
 
-        throw new Error('Not implemented')
+        const body = JSON.stringify(args)
+
+        console.log(body)
+
+        let providerConfig = this.providerConfig
+        const generateResponse = async () => {
+            const response = await this.fetch(
+                providerConfig.url('chat/completions'),
+                {
+                    method: 'POST',
+                    headers: Object.assign(
+                        {
+                            'Content-Type': 'text/event-stream'
+                        },
+                        providerConfig.headers,
+                        options.headers
+                    ),
+                    body,
+                    signal: options.signal
+                }
+            )
+
+            if (response.status !== 200) {
+                throw new Error(
+                    `Invalid response from API: ${response.statusText} ${await response.text()}`
+                )
+            }
+
+            const responseBody = response.body
+
+            if (responseBody == null) {
+                throw new Error(
+                    `Invalid response from API: ${response.statusText} ${await response.text()}`
+                )
+            }
+
+            return createEventSourceResponseHandler(
+                OpenAICompatibleStreamChunkSchema
+            )(responseBody)
+        }
+
+        const parsedResponse =
+            await this.providerInstance.concurrencyLimiter.add(
+                createRetry(
+                    async () => {
+                        providerConfig = this.providerConfig
+                        return await generateResponse()
+                    },
+                    {
+                        maxTimeout: this.providerConfig.timeout,
+                        retries: this.providerConfig.maxRetries,
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                        onRetry: (e: any) => {
+                            console.warn(
+                                `Retrying due to error: ${e.message}. ${
+                                    e.cause != null ? `Cause: ${e.cause}` : ''
+                                }`
+                            )
+                        }
+                    }
+                )
+            )
+
+        const toolCalls: {
+            id: string
+            type: 'function'
+            function: {
+                name: string
+                arguments: string
+            }
+            hasFinished: boolean
+        }[] = []
+
+        let finishReason: LanguageModelFinishReason = 'unknown'
+        let usage: {
+            promptTokens: number | undefined
+            completionTokens: number | undefined
+        } = {
+            promptTokens: undefined,
+            completionTokens: undefined
+        }
+
+        return parsedResponse.pipeThrough(
+            new TransformStream<
+                ParseResult<z.infer<typeof OpenAICompatibleStreamChunkSchema>>,
+                LanguageModelStreamResponseChunk
+            >({
+                transform(chunk, controller) {
+                    // handle failed chunk parsing / validation:
+                    if (!chunk.success) {
+                        finishReason = 'error'
+                        controller.enqueue({
+                            type: 'error',
+                            error: chunk.error
+                        })
+                        return
+                    }
+                    const value = chunk.data
+
+                    // handle error chunks:
+                    if ('error' in value) {
+                        finishReason = 'error'
+                        controller.enqueue({
+                            type: 'error',
+                            error: value.error?.message ?? value
+                        })
+                        return
+                    }
+
+                    if (value.usage != null) {
+                        usage = {
+                            promptTokens:
+                                value.usage.prompt_tokens ?? undefined,
+                            completionTokens:
+                                value.usage.completion_tokens ?? undefined
+                        }
+                    }
+
+                    const choice = value?.choices?.[0]
+
+                    if (choice?.finish_reason != null) {
+                        finishReason = mapOpenAICompatibleFinishReason(
+                            choice.finish_reason
+                        )
+                    }
+
+                    if (choice?.delta == null) {
+                        return
+                    }
+
+                    const delta = choice?.delta
+
+                    // enqueue reasoning before text deltas:
+                    if (delta.reasoning_content != null) {
+                        controller.enqueue({
+                            type: 'reasoning',
+                            textDelta: delta.reasoning_content
+                        })
+                    }
+
+                    if (delta.content != null) {
+                        controller.enqueue({
+                            type: 'text-delta',
+                            textDelta: delta.content
+                        })
+                    }
+
+                    if (delta.tool_calls != null) {
+                        for (const toolCallDelta of delta.tool_calls) {
+                            const index = toolCallDelta.index
+
+                            if (toolCalls[index] == null) {
+                                if (toolCallDelta.type !== 'function') {
+                                    throw new Error(
+                                        `Unexpected tool call delta type: ${toolCallDelta.type}`
+                                    )
+                                }
+
+                                if (toolCallDelta.id == null) {
+                                    throw new Error(
+                                        `Expected 'function.id' to be a string.`
+                                    )
+                                }
+
+                                if (toolCallDelta.function?.name == null) {
+                                    throw new Error(
+                                        `Expected 'function.name' to be a string.`
+                                    )
+                                }
+
+                                toolCalls[index] = {
+                                    id: toolCallDelta.id,
+                                    type: 'function',
+                                    function: {
+                                        name: toolCallDelta.function.name,
+                                        arguments:
+                                            toolCallDelta.function.arguments ??
+                                            ''
+                                    },
+                                    hasFinished: false
+                                }
+
+                                const toolCall = toolCalls[index]
+
+                                if (
+                                    toolCall.function?.name != null &&
+                                    toolCall.function?.arguments != null
+                                ) {
+                                    // check if tool call is complete
+                                    // (some providers send the full tool call in one chunk):
+                                    if (
+                                        isParsableJson(
+                                            toolCall.function.arguments
+                                        )
+                                    ) {
+                                        controller.enqueue({
+                                            type: 'tool-call',
+                                            toolCallType: 'function',
+                                            toolCallId: toolCall.id,
+                                            toolName: toolCall.function.name,
+                                            args: toolCall.function.arguments
+                                        })
+                                        toolCall.hasFinished = true
+                                    }
+                                }
+
+                                continue
+                            }
+
+                            // existing tool call, merge if not finished
+                            const toolCall = toolCalls[index]
+
+                            if (toolCall.hasFinished) {
+                                continue
+                            }
+
+                            if (toolCallDelta.function?.arguments != null) {
+                                toolCall.function!.arguments +=
+                                    toolCallDelta.function?.arguments ?? ''
+                            }
+
+                            // check if tool call is complete
+                            if (
+                                toolCall.function?.name != null &&
+                                toolCall.function?.arguments != null &&
+                                isParsableJson(toolCall.function.arguments)
+                            ) {
+                                controller.enqueue({
+                                    type: 'tool-call',
+                                    toolCallType: 'function',
+                                    toolCallId: toolCall.id,
+                                    toolName: toolCall.function.name,
+                                    args: toolCall.function.arguments
+                                })
+                                toolCall.hasFinished = true
+                            }
+                        }
+                    }
+                },
+
+                flush(controller) {
+                    controller.enqueue({
+                        type: 'finish',
+                        finishReason,
+                        usage: {
+                            promptTokens: usage.promptTokens ?? NaN,
+                            completionTokens: usage.completionTokens ?? NaN,
+                            totalTokens:
+                                (usage.promptTokens ?? NaN) +
+                                (usage.completionTokens ?? NaN)
+                        }
+                    })
+                }
+            })
+        )
     }
 
     private get providerConfig(): OpenAICompatibleProviderConfig {
@@ -242,12 +502,19 @@ const OpenAICompatibleChatResponseSchema = z.object({
         .object({
             prompt_tokens: z.number(),
             completion_tokens: z.number(),
-
             prompt_tokens_details: z
                 .object({
                     cached_tokens: z.number()
                 })
                 .nullish()
+        })
+        .nullish(),
+    error: z
+        .object({
+            message: z.string(),
+            type: z.string(),
+            param: z.string().nullish(),
+            code: z.string().nullish()
         })
         .nullish()
 })
@@ -262,15 +529,17 @@ const OpenAICompatibleStreamChunkSchema = z.object({
                 delta: z.object({
                     role: z.literal('assistant').nullish(),
                     content: z.string().nullish(),
+                    reasoning_content: z.string().nullish(),
                     tool_calls: z
                         .array(
                             z.object({
-                                id: z.string().nullish(),
+                                id: z.string(),
                                 type: z.literal('function'),
                                 function: z.object({
                                     name: z.string(),
                                     arguments: z.string()
-                                })
+                                }),
+                                index: z.number()
                             })
                         )
                         .nullish()
@@ -288,6 +557,14 @@ const OpenAICompatibleStreamChunkSchema = z.object({
                     cached_tokens: z.number()
                 })
                 .nullish()
+        })
+        .nullish(),
+    error: z
+        .object({
+            message: z.string(),
+            type: z.string(),
+            param: z.string().nullish(),
+            code: z.string().nullish()
         })
         .nullish()
 })
