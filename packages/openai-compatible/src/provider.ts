@@ -2,6 +2,7 @@ import {
     ConcurrentQueue,
     createConcurrencyLimiter,
     createProviderPool,
+    EmbeddingModel,
     FetchFunction,
     LanguageModel,
     LanguageModelCallSettings,
@@ -13,6 +14,7 @@ import {
 import { defaultOpenAIModels } from './types.ts'
 import { getLatestModels } from './get-latest-models.ts'
 import { OpenAICompatibleLanguageModel } from './language-model.ts'
+import { OpenAICompatibleEmbeddingModel } from './embedding-model.ts'
 
 export function createOpenAICompatibleProvider(
     name: 'openai-compatible',
@@ -22,12 +24,14 @@ export function createOpenAICompatibleProvider(
     configs?: OpenAICompatibleProviderConfig[]
 ): OpenAICompatibleProvider & {
     (modelId: string): LanguageModel
+    model: (modelId: string) => LanguageModel
+    embedding: (modelId: string) => EmbeddingModel
 } {
     if (!fetch) {
         fetch = globalThis.fetch
     }
 
-    const modelsMap: Record<string, LanguageModel> = {}
+    const modelsMap: Record<string, LanguageModel | EmbeddingModel> = {}
 
     let lateastModels: ModelInfo[] = defaultOpenAIModels
 
@@ -56,7 +60,12 @@ export function createOpenAICompatibleProvider(
 
     const createLanguageModel = (modelId: string) => {
         if (modelsMap[modelId]) {
-            return modelsMap[modelId]
+            const model = modelsMap[modelId]
+            if (!(model instanceof OpenAICompatibleLanguageModel)) {
+                throw new Error(
+                    `Model ${modelId} is not  an instance of OpenAICompatibleLanguageModel`
+                )
+            }
         }
         modelsMap[modelId] = new OpenAICompatibleLanguageModel(
             configPool,
@@ -65,11 +74,28 @@ export function createOpenAICompatibleProvider(
             settings ?? {},
             fetch
         )
-        return modelsMap[modelId]
+        return modelsMap[modelId] as OpenAICompatibleLanguageModel
     }
 
     const createTextEmbeddingModel = (modelId: string) => {
-        throw new Error('Not implemented')
+        if (modelsMap[modelId]) {
+            const model = modelsMap[modelId]
+            if (!(model instanceof OpenAICompatibleEmbeddingModel)) {
+                throw new Error(
+                    `Model ${modelId} is not  an instance of OpenAICompatibleLanguageModel`
+                )
+            }
+        }
+        modelsMap[modelId] = new OpenAICompatibleEmbeddingModel(
+            configPool,
+            modelId,
+            provider as OpenAICompatibleProvider,
+            {
+                batchSize: 200
+            },
+            fetch
+        )
+        return modelsMap[modelId] as OpenAICompatibleEmbeddingModel
     }
 
     const provider = function (modelId: string) {
@@ -80,6 +106,8 @@ export function createOpenAICompatibleProvider(
     provider.languageModel = createLanguageModel
     provider.textEmbeddingModel = createTextEmbeddingModel
     provider.models = getModels
+    provider.embedding = createTextEmbeddingModel
+    provider.model = createLanguageModel
     provider.configPool = configPool
     provider.concurrencyLimiter = createConcurrencyLimiter(10)
 

@@ -7,7 +7,8 @@ import {
     generatateText,
     promptTemplate,
     streamText,
-    tool
+    tool,
+    embed
 } from 'cortexluna'
 import { z, ZodSchema } from 'zod'
 
@@ -58,7 +59,9 @@ describe('Chat', () => {
             return new Promise(async (resolve, reject) => {
                 const { text, usage, finishReason, steps } =
                     await generatateText({
-                        model: openaiCompatible('gemini-2.0-flash-lite-preview'),
+                        model: openaiCompatible(
+                            'gemini-2.0-flash-lite-preview'
+                        ),
                         prompt: 'Query the current weather in Beijing, China',
                         tools: [
                             tool(
@@ -113,10 +116,24 @@ describe('Chat', () => {
             })
         })
 
+        it('should emembedding', async function () {
+            this.timeout(100000)
+
+            return new Promise(async (resolve, reject) => {
+                const { embedding, usage } = await embed({
+                    model: openaiCompatible.embedding(
+                        'gemini-2.0-flash-lite-preview'
+                    ),
+                    value: 'The quick brown fox jumps over the lazy dog'
+                })
+
+                console.log(embedding, usage)
+            })
+        })
+
         it('should stream chat', function () {
             this.timeout(100000)
             return new Promise(async (resolve, reject) => {
-
                 const { textStream, text } = streamText({
                     model: openaiCompatible('gemini-2.0-flash-lite-preview'),
                     prompt: 'Talk a joke about programming'
