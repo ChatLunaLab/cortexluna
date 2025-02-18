@@ -120,14 +120,15 @@ describe('Chat', () => {
             this.timeout(100000)
 
             return new Promise(async (resolve, reject) => {
-                const { embedding, usage } = await embed({
+                const { embedding, usage, value } = await embed({
                     model: openaiCompatible.embedding(
-                        'gemini-2.0-flash-lite-preview'
+                        'bge-m3'
                     ),
                     value: 'The quick brown fox jumps over the lazy dog'
                 })
 
-                console.log(embedding, usage)
+                console.log(value, embedding.length, usage)
+                resolve()
             })
         })
 

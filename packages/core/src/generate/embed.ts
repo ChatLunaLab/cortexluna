@@ -13,7 +13,7 @@ export async function embed<T = string>({
     headers
 }: {
     model: EmbeddingModel<T>
-    value: T | T[]
+    value: T
     signal?: AbortSignal
     headers?: Record<string, string>
 }): Promise<EmbedResult<T>> {
@@ -66,7 +66,7 @@ export async function embed<T = string>({
 }
 
 export interface EmbedResult<T> {
-    readonly value: T | T[]
+    readonly value: T
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     readonly embedding: this['value'] extends (infer U)[]
