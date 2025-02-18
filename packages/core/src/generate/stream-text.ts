@@ -51,7 +51,7 @@ function createInitialState(): StreamState {
         toolResults: [],
         steps: [],
         metadata: [],
-        currentStep: 0,
+        currentStep: -1,
         currentStepState: 'initial'
     }
 }
@@ -107,7 +107,6 @@ export function streamText({
     const languageModelTools = formatToolsToLanguageModelTools(tools ?? [])
 
     async function handleStreamPart(value: TextStreamPart) {
-        console.log(value)
         switch (value.type) {
             case 'text-delta':
                 state.fullText += value.textDelta
@@ -117,17 +116,17 @@ export function streamText({
                         ? 'continue'
                         : state.currentStepState
 
-                await writer.write(value)
+                writer.write(value)
                 break
             case 'reasoning':
                 state.reasoningText =
                     (state.reasoningText ?? '') + value.textDelta
-                await writer.write(value)
+                writer.write(value)
                 break
             case 'source':
                 state.sources.push(value.source)
                 state.stepSources.push(value.source)
-                await writer.write(value)
+                writer.write(value)
                 break
             case 'tool-call': {
                 if (!tools) {
@@ -143,7 +142,7 @@ export function streamText({
                 if (part) {
                     state.toolCalls.push(part)
                     state.currentStepState = 'tool-result'
-                    await writer.write(value)
+                    writer.write(value)
                 }
 
                 break
@@ -153,7 +152,7 @@ export function streamText({
                     role: 'tool',
                     content: state.toolResults
                 })
-                await writer.write(value)
+                writer.write(value)
                 break
             case 'response-metadata': {
                 state.metadata.push(value.metadata)
@@ -167,7 +166,7 @@ export function streamText({
                 state.toolCalls = []
                 state.toolResults = []
                 state.currentStepState = 'initial'
-                await writer.write(value)
+                writer.write(value)
                 break
             case 'step-finish':
                 if (state.toolCalls.length > 0) {
@@ -211,7 +210,7 @@ export function streamText({
                     })
                 }
 
-                await writer.write(value)
+                writer.write(value)
 
                 state.steps.push({
                     text: state.stepText,
@@ -236,7 +235,7 @@ export function streamText({
                         : value.usage
                 }
                 state.currentStepState = 'done'
-                await writer.write(value)
+                writer.write(value)
                 break
             case 'error':
                 callback?.onError?.(value.error as Error, {
@@ -263,7 +262,7 @@ export function streamText({
             currentPartType = 'source'
         }
 
-        if (currentPartType !== lastPartType) {
+        if (currentPartType !== lastPartType && currentPartType !== '') {
             const metadata = {
                 type: 'response-metadata',
                 metadata: {
@@ -312,11 +311,9 @@ export function streamText({
                 })
 
                 try {
-                    console.log('0', !(signal?.aborted ?? false))
                     while (!(signal?.aborted ?? false)) {
-                        console.log('0.5', !(signal?.aborted ?? false))
                         const { done, value } = await reader.read()
-                        console.log('1', done, value)
+
                         if (done) break
 
                         await handleStreamPart(value)
@@ -340,9 +337,6 @@ export function streamText({
                             break // Break inner loop to get new stream
                         }
                     }
-                    await handleStreamPart({
-                        type: 'step-finish'
-                    })
                 } finally {
                     reader.releaseLock()
                 }
@@ -400,13 +394,18 @@ export function streamText({
     return {
         get textStream() {
             return createAsyncIterableStream<string>(
-                new TransformStream<TextStreamPart, string>({
-                    transform(chunk, controller) {
-                        if (chunk.type === 'text-delta') {
-                            controller.enqueue(chunk.textDelta)
+                baseStream.readable.pipeThrough(
+                    new TransformStream<TextStreamPart, string>({
+                        transform(chunk, controller) {
+                            if (chunk.type === 'text-delta') {
+                                controller.enqueue(chunk.textDelta)
+                            }
+                        },
+                        flush(controller) {
+                            controller.terminate()
                         }
-                    }
-                })
+                    })
+                )
             )
         },
 

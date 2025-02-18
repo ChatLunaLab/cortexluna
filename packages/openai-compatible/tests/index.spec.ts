@@ -116,7 +116,7 @@ describe('Chat', () => {
         it('should stream chat', function () {
             this.timeout(100000)
             return new Promise(async (resolve, reject) => {
-                console.log(1)
+
                 const { textStream, text } = streamText({
                     model: openaiCompatible('gemini-2.0-flash-lite-preview'),
                     prompt: 'Talk a joke about programming'

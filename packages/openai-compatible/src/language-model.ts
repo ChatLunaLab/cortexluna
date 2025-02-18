@@ -219,7 +219,7 @@ export class OpenAICompatibleLanguageModel implements LanguageModel {
                     method: 'POST',
                     headers: Object.assign(
                         {
-                            'Content-Type': 'text/event-stream'
+                            'Content-Type': 'application/json'
                         },
                         providerConfig.headers,
                         options.headers
@@ -284,9 +284,11 @@ export class OpenAICompatibleLanguageModel implements LanguageModel {
         let usage: {
             promptTokens: number | undefined
             completionTokens: number | undefined
+            cachedTokens: number | undefined
         } = {
             promptTokens: undefined,
-            completionTokens: undefined
+            completionTokens: undefined,
+            cachedTokens: undefined
         }
 
         return parsedResponse.pipeThrough(
@@ -321,7 +323,10 @@ export class OpenAICompatibleLanguageModel implements LanguageModel {
                             promptTokens:
                                 value.usage.prompt_tokens ?? undefined,
                             completionTokens:
-                                value.usage.completion_tokens ?? undefined
+                                value.usage.completion_tokens ?? undefined,
+                            cachedTokens:
+                                value.usage.prompt_tokens_details
+                                    ?.cached_tokens ?? 0
                         }
                     }
 
@@ -456,7 +461,8 @@ export class OpenAICompatibleLanguageModel implements LanguageModel {
                             completionTokens: usage.completionTokens ?? NaN,
                             totalTokens:
                                 (usage.promptTokens ?? NaN) +
-                                (usage.completionTokens ?? NaN)
+                                (usage.completionTokens ?? NaN),
+                            cachedTokens: usage.cachedTokens ?? NaN
                         }
                     })
                 }
