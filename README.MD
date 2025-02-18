@@ -4,6 +4,18 @@ CortexLuna 是简易，轻量化的 LLM 框架。建设在 Cordis 之上，与 L
 
 CortexLuna 基于 Langchain 和 Vercel AI SDK 进行派生开发。
 
+## 路线图
+
+- [x] 结构化 `prompt` 格式化支持
+- [x] `generateText` 和 tool calling 支持
+- [x] `generateObject` 支持，结构化输出
+- [x] `streamText` 支持，流式输出
+- [x] `embed` 支持，获取文本（也可以是其他东西）的向量
+- [x] `Provider` 提供器，轮询配置等请求
+- [ ] Workflow 工作流支持
+- [ ] Vector Store 向量存储和检索
+- [ ] Hybrid search, bm25 混合向量查询
+
 ## 我是否应该使用 CortexLuna？
 
 CortexLuna 并不是为了取代 Langchain 或 Vercel AI SDK，而是为了给一部分（像我一样的用户）提供一个更简单，轻量级的 LLM 框架。
@@ -12,6 +24,10 @@ CortexLuna 并不是为了取代 Langchain 或 Vercel AI SDK，而是为了给�
 
 > [!TIP]
 > 请注意，此项目是实验性的，不应该用于生产环境。
+
+## 用法
+
+TODO...
 
 ## 致谢
 
