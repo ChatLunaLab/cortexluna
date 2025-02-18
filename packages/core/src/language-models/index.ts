@@ -32,27 +32,14 @@ export type LanguageModelStreamResponseChunk =
     // Sources:
     | { type: 'source'; source: LanguageModelSource }
 
-    // Complete tool calls:
-    | ({ type: 'tool-call' } & LanguageModelToolCall)
-
     // Tool call deltas are only needed for object generation modes.
     // The tool call deltas must be partial JSON strings.
     | {
-          type: 'tool-call-delta'
+          type: 'tool-call'
           toolCallType: 'function'
           toolCallId: string
           toolName: string
-          argsTextDelta: string
-      }
-
-    // metadata for the response.
-    // separate stream part so it can be sent once it is available.
-    | {
-          type: 'response-metadata'
-          id?: string
-          responseType: 'text' | 'reasoning' | 'source' | 'tool-call'
-          timestamp?: Date
-          model?: string
+          args: string
       }
 
     // the usage stats, finish reason and logprobs should be the last part of the
