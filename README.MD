@@ -27,6 +27,7 @@ CortexLuna 基于 Langchain 和 Vercel AI SDK 派生开发。
 和 Vercel AI SDK 类似，CortexLuna 提供了 `generateText` 和 `generateObject` 等 API。
 
 ```typescript
+// 需要设置环境变量啊喂
 const { text, usage, finishReason } = await generatateText({
     model: openaiCompatible('gemini-2.0-flash-lite-preview'),
     prompt: 'Talk a joke about programming'
