@@ -1,0 +1,65 @@
+{
+    "name": "@cortexluna/workflow",
+    "description": "workflow support for cortexluna",
+    "version": "0.0.1",
+    "main": "lib/index.cjs",
+    "module": "lib/index.mjs",
+    "typings": "lib/index.d.ts",
+    "files": [
+        "lib",
+        "dist"
+    ],
+    "exports": {
+        ".": {
+            "import": "./lib/index.mjs",
+            "require": "./lib/index.cjs",
+            "types": "./lib/index.d.ts"
+        },
+        "./package.json": "./package.json"
+    },
+    "type": "module",
+    "author": "dingyi222666 <dingyi222666@foxmail.com>",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/ChatLunaLab/chatluna.git",
+        "directory": "packages/workflow"
+    },
+    "license": "AGPL-3.0",
+    "bugs": {
+        "url": "https://github.com/ChatLunaLab/cortexluna/issues"
+    },
+    "homepage": "https://github.com/ChatLunaLab/cortexluna/tree/main/packages/workflow#readme",
+    "scripts": {
+        "build": "atsc -b"
+    },
+    "engines": {
+        "node": ">=18.0.0"
+    },
+    "keywords": [
+        "chatbot",
+        "koishi",
+        "plugin",
+        "service",
+        "chatgpt",
+        "gpt",
+        "chatluna",
+        "provider"
+    ],
+    "dependencies": {
+        "cortexluna": "^0.0.1",
+        "zod": "3.24.2"
+    },
+    "devDependencies": {
+        "atsc": "^2.1.0",
+        "cordis": "^3.18.1"
+    },
+    "peerDependencies": {
+        "cordis": "^3.18.1",
+        "cortexluna": "^0.0.1"
+    },
+    "peerDependenciesMeta": {
+        "cordis": {
+            "optional": true
+        }
+    }
+}
