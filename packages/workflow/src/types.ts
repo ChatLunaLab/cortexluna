@@ -29,7 +29,12 @@ export type NodeDefinition<
     TOutput extends NodeIO = NodeIO,
     TData = unknown
 > = {
-    run: (input: TInput, context: NodeContext, data?: TData) => Promise<TOutput>
+    run: (
+        input: TInput,
+        context: NodeContext,
+        node: WorkflowNode,
+        data?: TData
+    ) => Promise<TOutput>
     inputSchema?:
         | z.ZodType<TInput>
         | ((node: WorkflowNode) => z.ZodType<TInput>)

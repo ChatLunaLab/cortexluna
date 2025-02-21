@@ -325,11 +325,7 @@ describe('Workflow with Optional Outputs and Skipped Nodes', () => {
                 operation: z.enum(['multiply', 'divide']),
                 factor: z.number()
             }),
-            run: async (
-                input: CalculatorInput,
-                context: NodeContext,
-                data?: CalculatorData
-            ) => {
+            run: async (input, context, node, data?: CalculatorData) => {
                 if (!data) {
                     throw new Error('Missing data for calculator node')
                 }
