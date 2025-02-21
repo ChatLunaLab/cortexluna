@@ -30,8 +30,12 @@ export type NodeDefinition<
     TData = unknown
 > = {
     run: (input: TInput, context: NodeContext, data?: TData) => Promise<TOutput>
-    inputSchema?: z.ZodType<TInput>
-    outputSchema?: Record<string, z.ZodType<unknown>>
+    inputSchema?:
+        | z.ZodType<TInput>
+        | ((node: WorkflowNode) => z.ZodType<TInput>)
+    outputSchema?:
+        | Record<string, z.ZodType<unknown>>
+        | ((node: WorkflowNode) => Record<string, z.ZodType<unknown>>)
     dataSchema?: z.ZodType<TData>
 }
 

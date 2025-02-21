@@ -143,13 +143,17 @@ describe('Workflow with Optional Outputs and Skipped Nodes', () => {
         }
 
         const [lastNodeResult, allResults] = await runExample()
-        
+
         // Verify last node result (evenHandler1)
         expect(lastNodeResult.state).to.equal('completed')
         expect(lastNodeResult.output).to.deep.equal({ doubled: 8 })
-        
+
         // Verify all node results
-        expect(allResults).to.have.all.keys('processor1', 'evenHandler1', 'oddHandler1')
+        expect(allResults).to.have.all.keys(
+            'processor1',
+            'evenHandler1',
+            'oddHandler1'
+        )
         expect(allResults.processor1.state).to.equal('completed')
         expect(allResults.processor1.output).to.deep.equal({ even: 4 })
         expect(allResults.evenHandler1.state).to.equal('completed')
@@ -284,7 +288,11 @@ describe('Workflow with Optional Outputs and Skipped Nodes', () => {
         expect(lastNodeResult.output).to.deep.equal({ doubled: 10 })
 
         // Verify all node results
-        expect(allResults).to.have.all.keys('if1', 'trueHandler1', 'falseHandler1')
+        expect(allResults).to.have.all.keys(
+            'if1',
+            'trueHandler1',
+            'falseHandler1'
+        )
         expect(allResults.if1.state).to.equal('completed')
         expect(allResults.if1.output).to.deep.equal({ true: 5 })
         expect(allResults.trueHandler1.state).to.equal('completed')
@@ -395,5 +403,99 @@ describe('Workflow with Optional Outputs and Skipped Nodes', () => {
         expect(allResults.multiply.output).to.deep.equal({ result: 20 })
         expect(allResults.divide.state).to.equal('completed')
         expect(allResults.divide.output).to.deep.equal({ result: 5 })
+    })
+
+    it('should handle dynamic input/output schemas based on node config', async () => {
+        // Define node types with dynamic schemas
+        type EvalInput = { value: number | string }
+        type EvalOutput = { result: unknown }
+
+        const evalNode: NodeDefinition<EvalInput, EvalOutput> = {
+            inputSchema: (node: WorkflowNode) => {
+                // Dynamic input schema based on node config
+                const inputType = node.config?.inputType || 'number'
+                return z.object({
+                    value: inputType === 'string' ? z.string() : z.number()
+                })
+            },
+            outputSchema: (node: WorkflowNode) => {
+                // Dynamic output schema based on node config
+                const outputType = node.config?.outputType || 'number'
+                return {
+                    result: outputType === 'string' ? z.string() : z.number()
+                }
+            },
+            run: async (input: EvalInput) => {
+                // Simple evaluation for demonstration
+                const result = input.value.toString()
+                return { result }
+            }
+        }
+
+        // Create and configure workflow
+        const factory = createNodeFactory()
+        factory.registerNode('eval', evalNode)
+
+        const workflow: WorkflowNode[] = [
+            {
+                id: 'eval1',
+                type: 'eval',
+                dependencies: [],
+                config: {
+                    inputType: 'number',
+                    outputType: 'string'
+                }
+            }
+        ]
+
+        const initialContext: NodeContext = {
+            variables: {
+                value: 42
+            },
+            metadata: {}
+        }
+
+        const [lastNodeResult, allResults] = await executeWorkflow(
+            workflow,
+            factory,
+            initialContext,
+            {
+                maxRetries: 2,
+                maxParallel: 2
+            }
+        )
+
+        // Verify results
+        expect(lastNodeResult.state).to.equal('completed')
+        expect(lastNodeResult.output).to.deep.equal({ result: '42' })
+        expect(allResults.eval1.state).to.equal('completed')
+        expect(allResults.eval1.output).to.deep.equal({ result: '42' })
+
+        // Test with invalid input type
+        const invalidWorkflow: WorkflowNode[] = [
+            {
+                id: 'eval2',
+                type: 'eval',
+                dependencies: [],
+                config: {
+                    inputType: 'string',
+                    outputType: 'number'
+                }
+            }
+        ]
+
+        const [invalidLastResult, invalidResults] = await executeWorkflow(
+            invalidWorkflow,
+            factory,
+            initialContext,
+            {
+                maxRetries: 2,
+                maxParallel: 2
+            }
+        )
+
+        // Verify validation failure
+        expect(invalidLastResult.state).to.equal('failed')
+        expect(invalidResults.eval2.state).to.equal('failed')
     })
 })

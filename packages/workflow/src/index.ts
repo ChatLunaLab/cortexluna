@@ -71,7 +71,11 @@ function validateNodeInput(
 ): boolean {
     if (!definition.inputSchema) return true
     try {
-        definition.inputSchema.parse(input)
+        const schema =
+            typeof definition.inputSchema === 'function'
+                ? definition.inputSchema(node)
+                : definition.inputSchema
+        schema.parse(input)
         return true
     } catch {
         return false
@@ -81,13 +85,18 @@ function validateNodeInput(
 function validateNodeOutput(
     definition: NodeDefinition,
     output: NodeIO,
-    context: NodeContext
+    context: NodeContext,
+    node: WorkflowNode
 ): boolean {
     if (!definition.outputSchema) return true
     try {
-        for (const [key, schema] of Object.entries(definition.outputSchema)) {
+        const schema =
+            typeof definition.outputSchema === 'function'
+                ? definition.outputSchema(node)
+                : definition.outputSchema
+        for (const [key, schemaType] of Object.entries(schema)) {
             if (key in output) {
-                schema.parse(output[key])
+                schemaType.parse(output[key])
             }
         }
         return true
@@ -258,6 +267,11 @@ export async function executeWorkflow(
                     timing.duration = timing.endTime - timing.startTime
                     callbacks.onNodeError?.(node.id, node.type, error, timing)
                     failed.add(node.id)
+                    results[node.id] = {
+                        state: 'failed' as const,
+                        output: {},
+                        error
+                    }
                     return
                 }
 
@@ -272,7 +286,14 @@ export async function executeWorkflow(
                         timing.endTime = Date.now()
                         timing.duration = timing.endTime - timing.startTime
 
-                        if (!validateNodeOutput(definition, output, context)) {
+                        if (
+                            !validateNodeOutput(
+                                definition,
+                                output,
+                                context,
+                                node
+                            )
+                        ) {
                             throw new Error(
                                 `Invalid output for node ${node.id}`
                             )
