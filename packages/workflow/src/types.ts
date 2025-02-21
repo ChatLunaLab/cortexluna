@@ -22,13 +22,17 @@ export type NodeResult = {
     error?: Error
 }
 
+export type WorkflowResult = [NodeResult, Record<NodeId, NodeResult>]
+
 export type NodeDefinition<
     TInput extends NodeIO = NodeIO,
-    TOutput extends NodeIO = NodeIO
+    TOutput extends NodeIO = NodeIO,
+    TData = unknown
 > = {
-    run: (input: TInput, context: NodeContext) => Promise<TOutput>
+    run: (input: TInput, context: NodeContext, data?: TData) => Promise<TOutput>
     inputSchema?: z.ZodType<TInput>
-    outputSchema?: z.ZodType<TOutput>
+    outputSchema?: Record<string, z.ZodType<unknown>>
+    dataSchema?: z.ZodType<TData>
 }
 
 export type NodeDependency =
@@ -44,6 +48,7 @@ export type WorkflowNode = {
     type: string
     dependencies: NodeDependency[]
     config?: Record<string, unknown>
+    data?: unknown
 }
 
 export type NodeExecutionTiming = {
@@ -82,15 +87,17 @@ export type NodeFactory = {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     registerNode<
         TInput extends NodeIO = NodeIO<unknown>,
-        TOutput extends NodeIO = NodeIO<unknown>
+        TOutput extends NodeIO = NodeIO<unknown>,
+        TData = unknown
     >(
         type: string,
-        definition: NodeDefinition<TInput, TOutput>
+        definition: NodeDefinition<TInput, TOutput, TData>
     ): void
     getNode<
         TInput extends NodeIO = NodeIO<unknown>,
-        TOutput extends NodeIO = NodeIO<unknown>
+        TOutput extends NodeIO = NodeIO<unknown>,
+        TData = unknown
     >(
         type: string
-    ): NodeDefinition<TInput, TOutput> | undefined
+    ): NodeDefinition<TInput, TOutput, TData> | undefined
 }
