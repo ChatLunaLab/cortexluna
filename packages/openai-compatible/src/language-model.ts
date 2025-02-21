@@ -37,7 +37,7 @@ export class OpenAICompatibleLanguageModel implements LanguageModel {
         private fetch: typeof globalThis.fetch = globalThis.fetch
     ) {
         this.model = modelId
-        this.provider = providerInstance.name
+        this.provider = providerInstance.providerName
     }
 
     getChatRequest(options: LanguageModelCallOptions & { stream?: boolean }) {
@@ -208,8 +208,6 @@ export class OpenAICompatibleLanguageModel implements LanguageModel {
         )
 
         const body = JSON.stringify(args)
-
-        console.log(body)
 
         let providerConfig = this.providerConfig
         const generateResponse = async () => {

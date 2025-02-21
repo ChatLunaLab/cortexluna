@@ -102,7 +102,7 @@ export function createOpenAICompatibleProvider(
         return createLanguageModel(modelId)
     }
 
-    provider.name = name
+    provider.providerName = name
     provider.languageModel = createLanguageModel
     provider.textEmbeddingModel = createTextEmbeddingModel
     provider.models = getModels

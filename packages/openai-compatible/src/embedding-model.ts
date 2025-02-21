@@ -31,7 +31,7 @@ export class OpenAICompatibleEmbeddingModel implements EmbeddingModel<string> {
         private fetch: typeof globalThis.fetch = globalThis.fetch
     ) {
         this.model = modelId
-        this.provider = providerInstance.name
+        this.provider = providerInstance.providerName
     }
 
     getChatRequest<T>(options: EmbeddingModelCallOptions<T>) {

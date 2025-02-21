@@ -4,7 +4,7 @@ import { ProviderConfig } from './config.ts'
 import { ProviderPool } from 'cortexluna'
 
 export interface Provider<T extends ProviderConfig = ProviderConfig> {
-    name: string
+    providerName: string
     languageModel(modelId: string): LanguageModel
 
     textEmbeddingModel(modelId: string): EmbeddingModel
@@ -19,7 +19,7 @@ export class DefaultProviderRegistry implements Provider {
 
     private _providerModels: Record<string, ModelInfo[]> = {}
 
-    name: string = 'default'
+    providerName: string = 'default'
 
     registerProvider({
         id,
