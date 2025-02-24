@@ -17,7 +17,7 @@ export interface Provider<T extends ProviderConfig = ProviderConfig> {
 export class DefaultProviderRegistry implements Provider {
     private providers: Record<string, Provider> = {}
 
-    private _providerModels: Record<string, ModelInfo[]> = {}
+    private _providerModels: Record<string, PlatformModelInfo[]> = {}
 
     providerName: string = 'default'
 
@@ -27,9 +27,16 @@ export class DefaultProviderRegistry implements Provider {
     }: {
         id: string
         provider: Provider
-    }): void {
+    }): () => void {
         this.providers[id] = provider
-        this.models()
+        ;(async () => {
+            await this.models()[1]
+        })()
+
+        return () => {
+            delete this.providers[id]
+            delete this._providerModels[id]
+        }
     }
 
     private getProvider(id: string): Provider {
@@ -93,22 +100,35 @@ export class DefaultProviderRegistry implements Provider {
         return model
     }
 
-    models(): [ModelInfo[], Promise<ModelInfo[]>] {
-        const result: ModelInfo[] = []
-        const promises: Promise<ModelInfo[]>[] = []
+    models(): [PlatformModelInfo[], Promise<PlatformModelInfo[]>] {
+        const result: PlatformModelInfo[] = []
+        const promises: Promise<PlatformModelInfo[]>[] = []
         for (const providerId in this.providers) {
             if (this._providerModels[providerId]) {
                 continue
             }
-            let [cacheModels, latestModels] =
+
+            const [cacheModels, latestModels] =
                 this.providers[providerId].models()
-            result.push(...cacheModels)
-            this._providerModels[providerId] = cacheModels
-            latestModels = latestModels.then((models) => {
-                this._providerModels[providerId] = models
-                return models
+
+            const cachePlatformModels = cacheModels.map((model) => ({
+                ...model,
+                provider: providerId
+            })) as PlatformModelInfo[]
+
+            result.push(...cachePlatformModels)
+            this._providerModels[providerId] = cachePlatformModels
+
+            const latestPlatformModels = latestModels.then((models) => {
+                const platformModels = models.map((model) => ({
+                    ...model,
+                    provider: providerId
+                })) as PlatformModelInfo[]
+
+                this._providerModels[providerId] = platformModels
+                return platformModels
             })
-            promises.push(latestModels)
+            promises.push(latestPlatformModels)
         }
         return [result, Promise.all(promises).then((models) => models.flat())]
     }
@@ -129,6 +149,10 @@ export interface ModelInfo {
     costPerTokenInput?: number
 
     costPerTokenOutput?: number
+}
+
+export type PlatformModelInfo = ModelInfo & {
+    provider: string
 }
 
 /**
