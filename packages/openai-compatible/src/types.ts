@@ -1,5 +1,6 @@
 import { ModelInfo, ModelType } from 'cortexluna'
 
+export const additionalModels: ModelInfo[] = []
 export const defaultOpenAIModels: ModelInfo[] = [
     {
         name: 'o3-mini',

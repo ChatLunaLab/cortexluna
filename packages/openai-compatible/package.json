@@ -50,6 +50,7 @@
         "zod": "3.24.2"
     },
     "devDependencies": {
+        "@cordisjs/plugin-http": "^0.6.3",
         "atsc": "^2.1.0",
         "cordis": "^3.18.1"
     },

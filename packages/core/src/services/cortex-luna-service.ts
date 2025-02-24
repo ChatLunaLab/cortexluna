@@ -39,3 +39,9 @@ export class CortexLunaService extends Service {
         }
     }
 }
+
+declare module 'cordis' {
+    interface Context {
+        cortex_luna: CortexLunaService
+    }
+}

@@ -7,7 +7,7 @@ import {
 } from 'cortexluna'
 import { OpenAICompatibleProviderConfig } from './provider.ts'
 import { z } from 'zod'
-import { defaultOpenAIModels } from './types.ts'
+import { additionalModels, defaultOpenAIModels } from './types.ts'
 
 export async function getLatestModels(
     pool: ProviderPool<OpenAICompatibleProviderConfig>,
@@ -42,7 +42,8 @@ export async function getLatestModels(
                         !model.id.includes('whisper') ||
                         !model.id.includes('realtime')
                 )
-                .map((model) => {
+
+                .map((model): ModelInfo => {
                     // TODO: check gemini, deepseek, ...
                     return {
                         name: model.id,
@@ -57,6 +58,7 @@ export async function getLatestModels(
                             )?.contextToken ?? 128000
                     }
                 })
+                .concat(additionalModels)
         } catch (e) {
             throw new Error(`Failed to parse models: ${resposeText}`)
         }

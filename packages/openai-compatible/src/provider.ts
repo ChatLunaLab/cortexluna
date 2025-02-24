@@ -17,7 +17,7 @@ import { OpenAICompatibleLanguageModel } from './language-model.ts'
 import { OpenAICompatibleEmbeddingModel } from './embedding-model.ts'
 
 export function createOpenAICompatibleProvider(
-    name: 'openai-compatible',
+    name: string | 'openai-compatible',
     settings?: LanguageModelCallSettings,
     fetch?: FetchFunction,
     poolSrategy: Strategy = 'round-robin',
