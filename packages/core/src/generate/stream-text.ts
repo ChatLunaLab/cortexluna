@@ -11,9 +11,11 @@ import {
 import {
     AssistantMessage,
     BaseMessage,
+    BaseMessageChunk,
+    createMessageChunk,
     UserMessage
 } from '../messages/messages.ts'
-import { ToolCallPart, ToolResultPart } from '../messages/part.ts'
+import { TextPart, ToolCallPart, ToolResultPart } from '../messages/part.ts'
 import { BaseTool } from '../tools/index.ts'
 import {
     AsyncIterableStream,
@@ -54,6 +56,200 @@ function createInitialState(): StreamState {
         currentStep: -1,
         currentStepState: 'initial'
     }
+}
+
+/**
+ * Creates a stream of BaseMessageChunk objects from an input source
+ * @param source The source stream of text or message parts
+ * @param role The role of the message chunks (default: 'assistant')
+ * @returns An AsyncIterableStream of BaseMessageChunk objects
+ */
+export function streamMessageChunks(
+    source:
+        | ReadableStream<TextStreamPart>
+        | TransformStream<unknown, TextStreamPart>,
+    role: 'assistant' | 'user' | 'system' | 'tool' = 'assistant'
+): AsyncIterableStream<BaseMessageChunk> {
+    const outputStream = new TransformStream<unknown, BaseMessageChunk>()
+    const writer = outputStream.writable.getWriter()
+
+    // Create a reader for the source stream
+    const readableStream =
+        source instanceof TransformStream ? source.readable : source
+    const reader = readableStream.getReader()
+
+    // Process the stream
+    let accumulatedText = ''
+    let reasoningText = ''
+    const currentToolCalls: ToolCallPart[] = []
+    const currentToolResults: ToolResultPart[] = []
+
+    // Process the stream asynchronously
+    ;(async () => {
+        try {
+            while (true) {
+                const { done, value } = await reader.read()
+
+                if (done) {
+                    // When the stream is done, emit a final message chunk if there's accumulated content
+                    if (
+                        accumulatedText ||
+                        currentToolCalls.length > 0 ||
+                        currentToolResults.length > 0
+                    ) {
+                        const content = createFinalContent(
+                            accumulatedText,
+                            currentToolCalls,
+                            currentToolResults
+                        )
+                        const chunk = createMessageChunk({
+                            role,
+                            content,
+                            metadata: reasoningText
+                                ? { reasoning: reasoningText }
+                                : undefined
+                        })
+                        await writer.write(chunk)
+                    }
+                    break
+                }
+
+                // Process different types of stream parts
+                if (value.type === 'text-delta') {
+                    accumulatedText += value.textDelta
+
+                    // Create a message chunk with the current text
+                    const chunk = createMessageChunk({
+                        role,
+                        content: accumulatedText,
+                        metadata: reasoningText
+                            ? { reasoning: reasoningText }
+                            : undefined
+                    })
+
+                    await writer.write(chunk)
+                } else if (value.type === 'reasoning') {
+                    // Accumulate reasoning text
+                    reasoningText += value.textDelta
+
+                    // Create a message chunk with the current content and updated reasoning
+                    const chunk = createMessageChunk({
+                        role,
+                        content: accumulatedText,
+                        metadata: { reasoning: reasoningText }
+                    })
+
+                    await writer.write(chunk)
+                } else if (value.type === 'tool-call') {
+                    // Add a new tool call
+                    const toolCall: ToolCallPart = {
+                        type: 'tool-call',
+                        toolCallId: value.toolCallId,
+                        toolName: value.toolName,
+                        args: JSON.parse(value.args)
+                    }
+
+                    currentToolCalls.push(toolCall)
+
+                    // Create a message chunk with the current content
+                    const content = createFinalContent(
+                        accumulatedText,
+                        currentToolCalls,
+                        currentToolResults
+                    )
+                    const chunk = createMessageChunk({
+                        role,
+                        content,
+                        metadata: reasoningText
+                            ? { reasoning: reasoningText }
+                            : undefined
+                    })
+
+                    await writer.write(chunk)
+                } else if (value.type === 'tool-result') {
+                    // Add a new tool result
+                    const toolResult: ToolResultPart = {
+                        type: 'tool-result',
+                        toolCallId: value.toolCallId,
+                        toolName: '', // This will be filled in by matching with tool calls
+                        result: JSON.parse(value.toolResult)
+                    }
+
+                    // Try to find matching tool call to get the tool name
+                    const matchingToolCall = currentToolCalls.find(
+                        (tc) => tc.toolCallId === value.toolCallId
+                    )
+                    if (matchingToolCall) {
+                        toolResult.toolName = matchingToolCall.toolName
+                    }
+
+                    currentToolResults.push(toolResult)
+
+                    // Create a message chunk with the current content
+                    const content = createFinalContent(
+                        accumulatedText,
+                        currentToolCalls,
+                        currentToolResults
+                    )
+                    const chunk = createMessageChunk({
+                        role,
+                        content,
+                        metadata: reasoningText
+                            ? { reasoning: reasoningText }
+                            : undefined
+                    })
+
+                    await writer.write(chunk)
+                }
+                // Other types (source, etc.) are ignored for message chunks
+            }
+
+            await writer.close()
+        } catch (error) {
+            await writer.abort(error)
+            throw error
+        } finally {
+            reader.releaseLock()
+        }
+    })()
+
+    return createAsyncIterableStream(outputStream)
+}
+
+/**
+ * Helper function to create the final content for a message chunk
+ */
+function createFinalContent(
+    text: string,
+    toolCalls: ToolCallPart[],
+    toolResults: ToolResultPart[]
+): string | (TextPart | ToolCallPart | ToolResultPart)[] {
+    if (!text && toolCalls.length === 0 && toolResults.length === 0) {
+        return ''
+    }
+
+    const parts: (TextPart | ToolCallPart | ToolResultPart)[] = []
+
+    // Add text part if there's text
+    if (text) {
+        parts.push({
+            type: 'text',
+            text
+        })
+    }
+
+    // Add tool calls
+    parts.push(...toolCalls)
+
+    // Add tool results
+    parts.push(...toolResults)
+
+    // If there's only text and no tool calls/results, return as string
+    if (parts.length === 1 && parts[0].type === 'text') {
+        return parts[0].text
+    }
+
+    return parts
 }
 
 export function streamText({
@@ -236,6 +432,12 @@ export function streamText({
                 }
                 state.currentStepState = 'done'
                 writer.write(value)
+                callback?.onLLMEnd?.({
+                    text: state.fullText,
+                    modelId: model.model,
+                    ...settings,
+                    ...state
+                })
                 break
             case 'error':
                 callback?.onError?.(value.error as Error, {
@@ -365,12 +567,6 @@ export function streamText({
             promises.steps.resolve(state.steps)
             promises.metadata.resolve(state.metadata)
 
-            callback?.onLLMEnd?.({
-                text: state.fullText,
-                modelId: model.model,
-                ...settings
-            })
-
             await writer.close()
         } catch (error) {
             writer.abort(error)
@@ -407,6 +603,10 @@ export function streamText({
                     })
                 )
             )
+        },
+
+        get messageStream() {
+            return streamMessageChunks(baseStream, 'assistant')
         },
 
         get fullStream() {
@@ -471,6 +671,8 @@ export interface StreamTextResult {
     readonly metadata: Promise<LanguageResponseMetadata[]>
 
     readonly textStream: AsyncIterableStream<string>
+
+    readonly messageStream: AsyncIterableStream<BaseMessageChunk>
 
     readonly fullStream: AsyncIterableStream<TextStreamPart>
 }

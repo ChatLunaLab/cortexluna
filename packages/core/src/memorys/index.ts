@@ -1,5 +1,5 @@
 import { BaseMessage } from '../messages/index.ts'
-
+export * from './buffer-window-memory.ts'
 export interface BaseChatMessageHistory {
     getMessages(): Promise<BaseMessage[]>
 

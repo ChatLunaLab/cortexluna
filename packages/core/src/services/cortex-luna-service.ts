@@ -13,10 +13,19 @@ export class CortexLunaService extends Service {
     }
 
     registerProvider({ id, provider }: { id: string; provider: Provider }) {
-        const dispose = this._registry.registerProvider({
+        const disposed = this._registry.registerProvider({
             id,
             provider
         })
+
+        const dispose = () => {
+            return () => {
+                disposed()
+                this.ctx.emit('cortexluna/provider-updated', this)
+            }
+        }
+
+        this.ctx.emit('cortexluna/provider-updated', this)
 
         return this.ctx.effect(() => dispose)
     }
@@ -43,5 +52,11 @@ export class CortexLunaService extends Service {
 declare module 'cordis' {
     interface Context {
         cortex_luna: CortexLunaService
+    }
+
+    interface Events {
+        'cortexluna/provider-updated': (
+            service: CortexLunaService
+        ) => Promise<void>
     }
 }

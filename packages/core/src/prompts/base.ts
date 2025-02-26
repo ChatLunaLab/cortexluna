@@ -1,4 +1,4 @@
-import { generatateText } from '../generate/index.ts'
+import { generatateText, streamText } from '../generate/index.ts'
 import { parseTemplate, renderTemplate } from './template.ts'
 import { InputValues, PartialValues } from './types.ts'
 import {
@@ -65,7 +65,10 @@ export function promptTemplate(template: string): BasePromptTemplate {
 }
 
 export function bindPromptTemplate<
-    T extends typeof generatateText | typeof generatateObject<R>,
+    T extends
+        | typeof generatateText
+        | typeof streamText
+        | typeof generatateObject<R>,
     R = unknown
 >(
     template:
