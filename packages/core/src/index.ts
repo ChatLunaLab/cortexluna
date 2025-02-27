@@ -12,6 +12,8 @@ export * from './utils/index.ts'
 export * from './provider/index.ts'
 export * from './generate/index.ts'
 export * from './callback/index.ts'
+export * from './retrievers/index.ts'
+export * from './vector-stores/index.ts'
 
 export function apply(ctx: Context) {
     ctx.plugin(CortexLunaService)
