@@ -14,7 +14,7 @@ import { formatToolsToLanguageModelTools } from '../utils/format-tools-to-langua
 import { Callback } from '../callback/index.ts'
 import { executeTools, parseToolCall } from './tool-call.ts'
 
-export async function generatateText({
+export async function generateText({
     model,
     prompt,
     maxRetries,

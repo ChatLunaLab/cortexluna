@@ -1,11 +1,11 @@
-import { generatateText, streamText } from '../generate/index.ts'
+import { generateText, streamText } from '../generate/index.ts'
 import { parseTemplate, renderTemplate } from './template.ts'
 import { InputValues, PartialValues } from './types.ts'
 import {
     BaseMessagePromptTemplate,
     BaseMessagesPromptTemplate
 } from './message.ts'
-import { generatateObject } from '../generate/generate-object.ts'
+import { generateObject } from '../generate/generate-object.ts'
 
 // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-constraint, @typescript-eslint/no-explicit-any
 export interface BasePromptTemplate<T extends any = string> {
@@ -66,16 +66,16 @@ export function promptTemplate(template: string): BasePromptTemplate {
 
 export function bindPromptTemplate<
     T extends
-        | typeof generatateText
+        | typeof generateText
         | typeof streamText
-        | typeof generatateObject<R>,
+        | typeof generateObject<R>,
     R = unknown
 >(
     template:
         | BasePromptTemplate
         | BaseMessagePromptTemplate
         | BaseMessagesPromptTemplate,
-    runFunction: T = generatateText as T
+    runFunction: T = generateText as T
 ) {
     return async function (
         args: Omit<Parameters<T>[0], 'prompt'> & {
@@ -121,8 +121,8 @@ export function bindPromptTemplateToObject<T>(
         | BaseMessagePromptTemplate
         | BaseMessagesPromptTemplate
 ) {
-    return bindPromptTemplate<typeof generatateObject<T>, T>(
+    return bindPromptTemplate<typeof generateObject<T>, T>(
         template,
-        generatateObject
+        generateObject
     )
 }

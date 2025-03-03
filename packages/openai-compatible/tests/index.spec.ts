@@ -3,8 +3,8 @@ import { openaiCompatible } from '../src/provider'
 import {
     bindPromptTemplate,
     bindPromptTemplateToObject,
-    generatateObject,
-    generatateText,
+    generateObject,
+    generateText,
     promptTemplate,
     streamText,
     tool,
@@ -17,7 +17,7 @@ describe('Chat', () => {
         it('should chat successful', async function () {
             this.timeout(100000)
             return new Promise(async (resolve, reject) => {
-                const { text, usage, finishReason } = await generatateText({
+                const { text, usage, finishReason } = await generateText({
                     model: openaiCompatible('gemini-2.0-flash-lite-preview'),
                     prompt: 'Talk a joke about programming'
                 })
@@ -37,7 +37,7 @@ describe('Chat', () => {
                     'Now is {time}.  I will ask you a question: {question}. Please answer it.'
                 )
 
-                const chain = bindPromptTemplate(prompt, generatateText)
+                const chain = bindPromptTemplate(prompt, generateText)
                 const { text, usage, finishReason } = await chain({
                     model: openaiCompatible('gemini-2.0-flash-lite-preview'),
                     input: {
@@ -58,7 +58,7 @@ describe('Chat', () => {
             this.timeout(100000)
             return new Promise(async (resolve, reject) => {
                 const { text, usage, finishReason, steps } =
-                    await generatateText({
+                    await generateText({
                         model: openaiCompatible(
                             'gemini-2.0-flash-lite-preview'
                         ),

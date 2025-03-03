@@ -12,7 +12,7 @@ import { Callback } from '../callback/index.ts'
 import { Schema, z } from 'zod'
 import { zodToJsonSchema } from 'zod-to-json-schema'
 
-export async function generatateObject<T>({
+export async function generateObject<T>({
     model,
     prompt,
     mode,
