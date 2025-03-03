@@ -68,6 +68,8 @@ export function apply(ctx: Context, config: Config) {
     })
 }
 
+export const name = '@cortexluna/openai-compatible'
+
 type FetchResponse = globalThis.Response
 
 declare module '@cordisjs/plugin-http' {
