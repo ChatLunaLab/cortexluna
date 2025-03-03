@@ -32,7 +32,7 @@ export async function getLatestModels(
         }).then((res) => res.text())
 
         try {
-            const models = modelsSchema.parse(JSON.parse(resposeText)).data
+            const models = listModelSchema.parse(JSON.parse(resposeText)).data
 
             return models
                 .filter(
@@ -68,7 +68,7 @@ export async function getLatestModels(
         retries: currentConfig.config.maxRetries,
         maxTimeout: currentConfig.config.timeout,
         onRetry(error, attempt, retryInfo) {
-            console.log(`Retry attempt ${attempt} failed with error: ${error}`)
+            console.error(`Retry attempt ${attempt} failed with error`, error)
             currentConfig.disable()
             currentConfig = pool.getProvider()
         }
@@ -77,13 +77,13 @@ export async function getLatestModels(
     return retry(currentConfig.config)
 }
 
-const modelsSchema = z.object({
-    object: z.literal('list'),
+const listModelSchema = z.object({
+    object: z.literal('list').optional(),
     data: z.array(
         z.object({
             id: z.string(),
-            object: z.literal('model'),
-            owned_by: z.string()
+            object: z.string().optional(),
+            owned_by: z.string().optional()
         })
     )
 })

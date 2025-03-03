@@ -111,7 +111,7 @@ export class OpenAICompatibleLanguageModel implements LanguageModel {
         let providerConfig = this.providerConfig
         const generateResponse = async () => {
             const response = await this.fetch(
-                providerConfig.url('chat/completions'),
+                providerConfig.url('/chat/completions'),
                 {
                     method: 'POST',
                     headers: Object.assign(

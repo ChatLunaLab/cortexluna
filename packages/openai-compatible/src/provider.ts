@@ -15,6 +15,7 @@ import { defaultOpenAIModels } from './types.ts'
 import { getLatestModels } from './get-latest-models.ts'
 import { OpenAICompatibleLanguageModel } from './language-model.ts'
 import { OpenAICompatibleEmbeddingModel } from './embedding-model.ts'
+import { buildRequestUrl } from './utils.ts'
 
 export function createOpenAICompatibleProvider(
     name: string | 'openai-compatible',
@@ -112,29 +113,14 @@ export function createOpenAICompatibleProvider(
     provider.concurrencyLimiter = createConcurrencyLimiter(10)
 
     if (process.env.OPENAI_COMPATIBLE_API_KEY) {
-        const url = process.env.OPENAI_COMPATIBLE_API_URL!
+        const baseURL = process.env.OPENAI_COMPATIBLE_API_URL!
         configPool.addProvider({
             apiKey: process.env.OPENAI_COMPATIBLE_API_KEY,
-            baseURL: url,
+            baseURL,
             headers: {
                 Authorization: `Bearer ${process.env.OPENAI_COMPATIBLE_API_KEY}`
             },
-            url: (subPath: string) => {
-                // check has v1
-                if (url.endsWith('/v1')) {
-                    return url + '/' + subPath
-                } else if (url.endsWith('/v1/')) {
-                    return url + subPath
-                }
-
-                // check has /
-                if (url.endsWith('/')) {
-                    return url + subPath
-                }
-
-                // add /v1
-                return url + '/v1/' + subPath
-            },
+            url: (subPath: string) => buildRequestUrl(baseURL, subPath),
             timeout: 300000
         })
     }

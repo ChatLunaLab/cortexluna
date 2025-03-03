@@ -39,3 +39,24 @@ export function isParsableJson(obj: string) {
         return false
     }
 }
+
+export function buildRequestUrl(baseUrl: string, subPath: string) {
+    const startWithSlash = subPath.startsWith('/')
+
+    const subPathWithoutSlash = !startWithSlash ? subPath : subPath.substring(1)
+
+    // check has v1
+    if (baseUrl.endsWith('/v1')) {
+        return baseUrl + '/' + subPathWithoutSlash
+    } else if (baseUrl.endsWith('/v1/')) {
+        return baseUrl + subPathWithoutSlash
+    }
+
+    // check has /
+    if (baseUrl.endsWith('/')) {
+        return baseUrl + subPathWithoutSlash
+    }
+
+    // add /v1
+    return baseUrl + '/v1/' + subPathWithoutSlash
+}

@@ -51,11 +51,11 @@ export const Config: Schema<Config> = Schema.intersect([
                 Schema.string().role('secret').required(),
                 Schema.string()
                     .description('请求 OpenAI API 的地址')
-                    .default('https://api.openai.com/v1')
+                    .default('https://api.openai.com/v1/')
             ])
         )
             .description('请求地址的 API Key 和请求地址列表')
-            .default([['', 'https://api.openai.com/v1']]),
+            .default([['', 'https://api.openai.com/v1/']]),
         additionCookies: Schema.array(
             Schema.tuple([
                 Schema.string().description('Cookie 名称'),

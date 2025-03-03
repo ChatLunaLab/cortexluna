@@ -54,7 +54,7 @@ export class OpenAICompatibleEmbeddingModel implements EmbeddingModel<string> {
         let providerConfig = this.providerConfig
         const generateResponse = async () => {
             const response = await this.fetch(
-                providerConfig.url('embeddings'),
+                providerConfig.url('/embeddings'),
                 {
                     method: 'POST',
                     headers: Object.assign(

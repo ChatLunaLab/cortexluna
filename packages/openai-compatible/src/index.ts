@@ -2,6 +2,7 @@ import { Context } from 'cordis'
 import { Config } from './config.ts'
 import { createOpenAICompatibleProvider } from './provider.ts'
 import type {} from '@cordisjs/plugin-http'
+import { buildRequestUrl } from './utils.ts'
 
 export * from './provider.ts'
 export * from './types.ts'
@@ -37,31 +38,16 @@ export function apply(ctx: Context, config: Config) {
                 return response.data
             },
             'weighted-random',
-            config.apiKeys.map(([apiKey, url]) => ({
+            config.apiKeys.map(([apiKey, baseURL]) => ({
                 apiKey,
-                baseURL: url,
+                baseURL,
                 headers: {
                     Authorization: `Bearer ${apiKey}`,
                     Cookies: config.additionCookies
                         .map(([key, value]) => `${key}=${value}`)
                         .join('; ')
                 },
-                url: (subPath: string) => {
-                    // check has v1
-                    if (url.endsWith('/v1')) {
-                        return url + '/' + subPath
-                    } else if (url.endsWith('/v1/')) {
-                        return url + subPath
-                    }
-
-                    // check has /
-                    if (url.endsWith('/')) {
-                        return url + subPath
-                    }
-
-                    // add /v1
-                    return url + '/v1/' + subPath
-                },
+                url: (subPath: string) => buildRequestUrl(baseURL, subPath),
                 timeout: 300000
             }))
         )
