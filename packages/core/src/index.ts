@@ -1,4 +1,4 @@
-import { Context, Schema } from 'cordis'
+import { Context, Schema as CordisSchema } from 'cordis'
 import { CortexLunaService } from './services/cortex-luna-service.ts'
 
 export * from './messages/index.ts'
@@ -23,4 +23,4 @@ export const name = 'cortexluna'
 
 export interface Config {}
 
-export const Config: Schema<Config> = Schema.object({})
+export const Config: CordisSchema<Config> = CordisSchema.object({})
