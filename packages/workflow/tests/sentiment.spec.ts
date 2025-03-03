@@ -11,7 +11,6 @@ import { openaiCompatible } from '@cortexluna/openai-compatible'
 import {
     bindPromptTemplate,
     bindPromptTemplateToObject,
-    generatateObject,
     promptTemplate
 } from 'cortexluna'
 
@@ -42,12 +41,17 @@ describe('Sentiment Analysis Workflow', () => {
         type IfNodeInput = Record<string, unknown>
         type IfNodeOutput = Record<string, boolean>
 
-        type VariableConfig = { name: string; type: 'input' | 'context' } | string
+        type VariableConfig =
+            | { name: string; type: 'input' | 'context' }
+            | string
 
         const ifNode: NodeDefinition<IfNodeInput, IfNodeOutput> = {
             inputSchema: (node: WorkflowNode) => {
                 const config = node.config as
-                    | { expressions: Record<string, string>; variables?: VariableConfig[] }
+                    | {
+                          expressions: Record<string, string>
+                          variables?: VariableConfig[]
+                      }
                     | undefined
                 if (!config) return z.record(z.unknown())
 
@@ -62,9 +66,11 @@ describe('Sentiment Analysis Workflow', () => {
                     const varConfig = config.variables?.find(
                         (vc) => (typeof vc === 'string' ? vc : vc.name) === v
                     )
-                    if (!varConfig ||
-                        (typeof varConfig === 'string') ||
-                        varConfig.type === 'input') {
+                    if (
+                        !varConfig ||
+                        typeof varConfig === 'string' ||
+                        varConfig.type === 'input'
+                    ) {
                         inputFields[v] = z.unknown()
                     }
                 })
@@ -84,7 +90,10 @@ describe('Sentiment Analysis Workflow', () => {
             },
             run: async (input, context, node) => {
                 const config = node?.config as
-                    | { expressions: Record<string, string>; variables?: VariableConfig[] }
+                    | {
+                          expressions: Record<string, string>
+                          variables?: VariableConfig[]
+                      }
                     | undefined
                 if (!config)
                     throw new Error('If node requires config with expressions')
@@ -95,8 +104,12 @@ describe('Sentiment Analysis Workflow', () => {
                 // Resolve variables from context if specified
                 if (config.variables) {
                     config.variables.forEach((varConfig) => {
-                        if (typeof varConfig === 'object' && varConfig.type === 'context') {
-                            evalContext[varConfig.name] = context.variables[varConfig.name]
+                        if (
+                            typeof varConfig === 'object' &&
+                            varConfig.type === 'context'
+                        ) {
+                            evalContext[varConfig.name] =
+                                context.variables[varConfig.name]
                         }
                     })
                 }
@@ -230,9 +243,7 @@ describe('Sentiment Analysis Workflow', () => {
                         if1: 'multisentiment === true',
                         elseif1: 'multisentiment === false'
                     },
-                    variables: [
-                        { name: 'multisentiment', type: 'context' }
-                    ]
+                    variables: [{ name: 'multisentiment', type: 'context' }]
                 }
             },
             {

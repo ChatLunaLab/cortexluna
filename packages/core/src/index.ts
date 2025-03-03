@@ -24,3 +24,5 @@ export const name = 'cortexluna'
 export interface Config {}
 
 export const Config: CordisSchema<Config> = CordisSchema.object({})
+
+export const inject = ['http']

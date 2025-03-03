@@ -46,7 +46,6 @@
         "provider"
     ],
     "dependencies": {
-        "cortexluna": "^0.0.1",
         "zod": "3.24.2"
     },
     "devDependencies": {
@@ -65,7 +64,7 @@
     },
     "cordis": {
         "description": {
-            "zh": "ChatLuna OpenAI 风格模型提供器"
+            "zh": "CortexLuna OpenAI 风格模型提供器"
         },
         "service": {
             "required": [

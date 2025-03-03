@@ -69,6 +69,7 @@ export function apply(ctx: Context, config: Config) {
 }
 
 export const name = '@cortexluna/openai-compatible'
+export const inject = ['cortex_luna', 'http']
 
 type FetchResponse = globalThis.Response
 
