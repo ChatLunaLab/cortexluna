@@ -43,7 +43,8 @@ export class CortexLunaService extends Service {
 
         try {
             return await lateast
-        } catch {
+        } catch (e) {
+            this.ctx.logger.error(e)
             return cached
         }
     }

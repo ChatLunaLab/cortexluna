@@ -96,7 +96,6 @@ export function bindPromptTemplate<
                 )}`
             )
         }
-
         let prompt = await template.format(inputValues)
 
         if (typeof prompt === 'string') {

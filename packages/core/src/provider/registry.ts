@@ -105,6 +105,9 @@ export class DefaultProviderRegistry implements Provider {
         const promises: Promise<PlatformModelInfo[]>[] = []
         for (const providerId in this.providers) {
             if (this._providerModels[providerId]) {
+                const cachedModels = this._providerModels[providerId]
+                result.push(...cachedModels)
+                promises.push(Promise.resolve(this._providerModels[providerId]))
                 continue
             }
 
