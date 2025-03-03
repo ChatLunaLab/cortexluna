@@ -91,12 +91,11 @@ console.log(object, usage)
 
 > 这 Vercel AI SDK 有什么区别？
 
+单纯 API 设计角度来看，确实是很接近。因为 CortexLuna 是基于 Vercel AI SDK 派生开发的，所以它的 API 设计也很接近。
 
-从这个角度来看，确实是很接近。因为 CortexLuna 是基于 Vercel AI SDK 派生开发的，所以它的 API 设计也很接近。
+但 CortexLuna 不是为了取代 Langchain 或 Vercel AI SDK，而是为了给其他项目（主要指的是 ChatLuna）提供一个更简单，轻量级的 LLM 框架。
 
-但 CortexLuna 并不是为了取代 Langchain 或 Vercel AI SDK，而是为了给其他项目（当然指的是 ChatLuna）提供一个更简单，轻量级的 LLM 框架。
-
-Langchain 实在是过于笨重了，我不想再继续依赖它。但 Vercel AI SDK 的设计又有一些简洁，我仍需要扩展一些东西。最后我尝试将两者的部分特定结合起来，就形成了 CortexLuna。
+Langchain 实在是过于笨重了，我不想再继续依赖它。但 Vercel AI SDK 的设计又比较简洁，我仍需要扩展一些东西才能用到 ChatLuna。最后我决定将两者的部分特定结合起来，就形成了 CortexLuna。
 
 > [!TIP]
 > 请注意，此项目是实验性的，不应该用于生产环境。
