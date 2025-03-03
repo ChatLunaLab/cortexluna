@@ -30,11 +30,11 @@ export class CortexLunaService extends Service {
         return this.ctx.effect(() => dispose)
     }
 
-    languageModel(id: `${string}:${string}`) {
+    languageModel(id: string) {
         return this._registry.languageModel(id)
     }
 
-    textEmbeddingModel(id: `${string}:${string}`) {
+    textEmbeddingModel(id: string) {
         return this._registry.textEmbeddingModel(id)
     }
 
