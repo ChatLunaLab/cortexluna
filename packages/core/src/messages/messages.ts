@@ -54,14 +54,14 @@ export interface UserMessage {
     content: MessageContent
     id?: string
     name?: string
-    metadata?: MessageMetadata
+    metadata?: MessageMetadata | null
 }
 
 export const UserMessageSchema = z.object({
     role: z.literal('user'),
     id: z.string().optional(),
     name: z.string().optional(),
-    metadata: z.record(z.unknown()).optional(),
+    metadata: z.record(z.unknown()).nullish(),
     content: MessageContentSchema
 })
 
@@ -78,7 +78,7 @@ export interface SystemMessage {
     content: string
     id?: string
     name?: string
-    metadata?: MessageMetadata
+    metadata?: MessageMetadata | null
 }
 
 export const SystemMessageSchema = z.object({
@@ -86,7 +86,7 @@ export const SystemMessageSchema = z.object({
     content: z.string(),
     id: z.string().optional(),
     name: z.string().optional(),
-    metadata: z.record(z.unknown()).optional()
+    metadata: z.record(z.unknown()).nullish()
 })
 
 export interface SystemMessageChunk extends SystemMessage {
@@ -102,7 +102,7 @@ export interface AssistantMessage {
     content: string | (ToolCallPart | TextPart | ThinkPart)[]
     id?: string
     name?: string
-    metadata?: MessageMetadata
+    metadata?: MessageMetadata | null
 }
 
 export const AssistantMessageSchema = z.object({
@@ -113,7 +113,7 @@ export const AssistantMessageSchema = z.object({
     ]),
     id: z.string().optional(),
     name: z.string().optional(),
-    metadata: z.record(z.unknown()).optional()
+    metadata: z.record(z.unknown()).nullish()
 })
 
 export interface AssistantMessageChunk extends AssistantMessage {
@@ -129,7 +129,7 @@ export interface ToolMessage {
     content: ToolResultPart[]
     id?: string
     name?: string
-    metadata?: MessageMetadata
+    metadata?: MessageMetadata | null
 }
 
 export const ToolMessageSchema = z.object({
@@ -137,7 +137,7 @@ export const ToolMessageSchema = z.object({
     content: z.array(ToolResultPartSchema),
     id: z.string().optional(),
     name: z.string().optional(),
-    metadata: z.record(z.unknown()).optional()
+    metadata: z.record(z.unknown()).nullish()
 })
 
 export interface ToolMessageChunk extends ToolMessage {
@@ -150,7 +150,7 @@ export const ToolMessageChunkSchema = z.object({
     content: z.array(ToolResultPartSchema),
     id: z.string().optional(),
     name: z.string().optional(),
-    metadata: z.record(z.unknown()).optional()
+    metadata: z.record(z.unknown()).nullish()
 })
 
 export const BaseMessageSchema = z.union([
