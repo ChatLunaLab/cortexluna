@@ -6,6 +6,8 @@ import {
     Part,
     TextPart,
     TextPartSchema,
+    ThinkPart,
+    ThinkPartSchema,
     ToolCallPart,
     ToolCallPartSchema,
     ToolResultPart,
@@ -97,7 +99,7 @@ export const SystemMessageChunkSchema = SystemMessageSchema.extend({
 
 export interface AssistantMessage {
     role: 'assistant'
-    content: string | (ToolCallPart | TextPart)[]
+    content: string | (ToolCallPart | TextPart | ThinkPart)[]
     id?: string
     name?: string
     metadata?: MessageMetadata
@@ -107,7 +109,7 @@ export const AssistantMessageSchema = z.object({
     role: z.literal('assistant'),
     content: z.union([
         z.string(),
-        z.array(z.union([ToolCallPartSchema, TextPartSchema]))
+        z.array(z.union([ToolCallPartSchema, TextPartSchema, ThinkPartSchema]))
     ]),
     id: z.string().optional(),
     name: z.string().optional(),

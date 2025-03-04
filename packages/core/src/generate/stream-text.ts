@@ -15,7 +15,7 @@ import {
     createMessageChunk,
     UserMessage
 } from '../messages/messages.ts'
-import { TextPart, ToolCallPart, ToolResultPart } from '../messages/part.ts'
+import { ToolCallPart, ToolResultPart } from '../messages/part.ts'
 import { BaseTool } from '../tools/index.ts'
 import {
     AsyncIterableStream,
@@ -78,12 +78,6 @@ export function streamMessageChunks(
         source instanceof TransformStream ? source.readable : source
     const reader = readableStream.getReader()
 
-    // Process the stream
-    let accumulatedText = ''
-    let reasoningText = ''
-    const currentToolCalls: ToolCallPart[] = []
-    const currentToolResults: ToolResultPart[] = []
-
     // Process the stream asynchronously
     ;(async () => {
         try {
@@ -91,54 +85,33 @@ export function streamMessageChunks(
                 const { done, value } = await reader.read()
 
                 if (done) {
-                    // When the stream is done, emit a final message chunk if there's accumulated content
-                    if (
-                        accumulatedText ||
-                        currentToolCalls.length > 0 ||
-                        currentToolResults.length > 0
-                    ) {
-                        const content = createFinalContent(
-                            accumulatedText,
-                            currentToolCalls,
-                            currentToolResults
-                        )
-                        const chunk = createMessageChunk({
-                            role,
-                            content,
-                            metadata: reasoningText
-                                ? { reasoning: reasoningText }
-                                : undefined
-                        })
-                        await writer.write(chunk)
-                    }
                     break
                 }
 
                 // Process different types of stream parts
                 if (value.type === 'text-delta') {
-                    accumulatedText += value.textDelta
-
-                    // Create a message chunk with the current text
+                    // Create a message chunk with just this delta
                     const chunk = createMessageChunk({
                         role,
-                        content: accumulatedText,
-                        metadata: reasoningText
-                            ? { reasoning: reasoningText }
-                            : undefined
+                        content: [
+                            {
+                                type: 'text',
+                                text: value.textDelta
+                            }
+                        ]
                     })
-
                     await writer.write(chunk)
                 } else if (value.type === 'reasoning') {
-                    // Accumulate reasoning text
-                    reasoningText += value.textDelta
-
-                    // Create a message chunk with the current content and updated reasoning
+                    // Create a message chunk with just this reasoning delta
                     const chunk = createMessageChunk({
                         role,
-                        content: accumulatedText,
-                        metadata: { reasoning: reasoningText }
+                        content: [
+                            {
+                                type: 'think',
+                                think: value.textDelta
+                            }
+                        ]
                     })
-
                     await writer.write(chunk)
                 } else if (value.type === 'tool-call') {
                     // Add a new tool call
@@ -149,20 +122,10 @@ export function streamMessageChunks(
                         args: JSON.parse(value.args)
                     }
 
-                    currentToolCalls.push(toolCall)
-
-                    // Create a message chunk with the current content
-                    const content = createFinalContent(
-                        accumulatedText,
-                        currentToolCalls,
-                        currentToolResults
-                    )
+                    // Create a message chunk with the current tool calls and results
                     const chunk = createMessageChunk({
                         role,
-                        content,
-                        metadata: reasoningText
-                            ? { reasoning: reasoningText }
-                            : undefined
+                        content: [toolCall]
                     })
 
                     await writer.write(chunk)
@@ -171,37 +134,26 @@ export function streamMessageChunks(
                     const toolResult: ToolResultPart = {
                         type: 'tool-result',
                         toolCallId: value.toolCallId,
-                        toolName: '', // This will be filled in by matching with tool calls
+                        toolName: '',
                         result: JSON.parse(value.toolResult)
                     }
 
-                    // Try to find matching tool call to get the tool name
-                    const matchingToolCall = currentToolCalls.find(
-                        (tc) => tc.toolCallId === value.toolCallId
-                    )
-                    if (matchingToolCall) {
-                        toolResult.toolName = matchingToolCall.toolName
-                    }
-
-                    currentToolResults.push(toolResult)
-
-                    // Create a message chunk with the current content
-                    const content = createFinalContent(
-                        accumulatedText,
-                        currentToolCalls,
-                        currentToolResults
-                    )
                     const chunk = createMessageChunk({
                         role,
-                        content,
-                        metadata: reasoningText
-                            ? { reasoning: reasoningText }
-                            : undefined
+                        content: [toolResult]
                     })
 
                     await writer.write(chunk)
+                } else {
+                    // Pass through other types directly
+                    // For example, source parts would be passed through here
+                    const chunk = createMessageChunk({
+                        role,
+                        content: '',
+                        metadata: { originalPart: value }
+                    })
+                    await writer.write(chunk)
                 }
-                // Other types (source, etc.) are ignored for message chunks
             }
 
             await writer.close()
@@ -214,42 +166,6 @@ export function streamMessageChunks(
     })()
 
     return createAsyncIterableStream(outputStream)
-}
-
-/**
- * Helper function to create the final content for a message chunk
- */
-function createFinalContent(
-    text: string,
-    toolCalls: ToolCallPart[],
-    toolResults: ToolResultPart[]
-): string | (TextPart | ToolCallPart | ToolResultPart)[] {
-    if (!text && toolCalls.length === 0 && toolResults.length === 0) {
-        return ''
-    }
-
-    const parts: (TextPart | ToolCallPart | ToolResultPart)[] = []
-
-    // Add text part if there's text
-    if (text) {
-        parts.push({
-            type: 'text',
-            text
-        })
-    }
-
-    // Add tool calls
-    parts.push(...toolCalls)
-
-    // Add tool results
-    parts.push(...toolResults)
-
-    // If there's only text and no tool calls/results, return as string
-    if (parts.length === 1 && parts[0].type === 'text') {
-        return parts[0].text
-    }
-
-    return parts
 }
 
 export function streamText({

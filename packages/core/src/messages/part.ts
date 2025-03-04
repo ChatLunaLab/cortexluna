@@ -12,6 +12,17 @@ export const TextPartSchema: z.ZodType<TextPart> = z.object({
     text: z.string()
 })
 
+export interface ThinkPart {
+    type: 'think'
+    think: string
+}
+
+/** @internal  */
+export const ThinkPartSchema: z.ZodType<ThinkPart> = z.object({
+    type: z.literal('think'),
+    think: z.string()
+})
+
 export interface ImagePart {
     type: 'image'
     image: DataContent | URL
@@ -96,6 +107,7 @@ export type Part =
     | FilePart
     | ToolCallPart
     | ToolResultPart
+    | ThinkPart
 
 export type MessageContent = string | Part[]
 
