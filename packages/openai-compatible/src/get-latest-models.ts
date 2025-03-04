@@ -49,6 +49,9 @@ export async function getLatestModels(
                 .map((model): ModelInfo => {
                     // TODO: check gemini, deepseek, ... to get the correct context token
                     const modelId = model.id
+
+                    // 监听 modelId 改动
+
                     return {
                         name: modelId,
                         type:

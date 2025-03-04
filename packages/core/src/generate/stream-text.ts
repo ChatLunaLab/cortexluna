@@ -144,6 +144,25 @@ export function streamMessageChunks(
                     })
 
                     await writer.write(chunk)
+                } else if (value.type === 'response-metadata') {
+                    await writer.write({
+                        role,
+                        content: '',
+                        metadata: {
+                            response_metadata: value.metadata
+                        },
+                        chunk: true
+                    })
+                } else if (value.type === 'finish') {
+                    await writer.write({
+                        role,
+                        content: '',
+                        metadata: {
+                            usgae: value.usage,
+                            finish_reason: value.finishReason
+                        },
+                        chunk: true
+                    })
                 } else {
                     // Pass through other types directly
                     // For example, source parts would be passed through here
@@ -384,7 +403,7 @@ export function streamText({
             const metadata = {
                 type: 'response-metadata',
                 metadata: {
-                    timestamp: new Date(),
+                    timestamp: Date.now(),
                     model: settings.modelId ?? model.model,
                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     responseType: currentPartType as any

@@ -62,8 +62,8 @@ export type LanguageModelUsage = {
 
 export type LanguageResponseMetadata = {
     id?: string
-    timestamp?: Date
-    model?: string
+    timestamp: number
+    model: string
     responseType: 'text' | 'reasoning' | 'source' | 'tool-call'
 }
 

@@ -92,7 +92,7 @@ export function createOpenAICompatibleProvider(
             modelId,
             provider as OpenAICompatibleProvider,
             {
-                batchSize: 200
+                batchSize: 20
             },
             fetch
         )
