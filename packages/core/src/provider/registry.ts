@@ -17,22 +17,7 @@ export interface Provider<T extends ProviderConfig = ProviderConfig> {
 export class DefaultProviderRegistry implements Provider {
     private providers: Record<string, Provider> = {}
 
-    private _providerModels: Record<string, PlatformModelInfo[]> = new Proxy(
-        {},
-        {
-            get(target, prop) {
-                return Reflect.get(target, prop)
-            },
-            set(target, prop, value) {
-                try {
-                    throw new Error(`6667`)
-                } catch (err) {
-                    console.error(err)
-                }
-                return Reflect.set(target, prop, value)
-            }
-        }
-    )
+    private _providerModels: Record<string, PlatformModelInfo[]> = {}
 
     providerName: string = 'default'
 
@@ -121,7 +106,6 @@ export class DefaultProviderRegistry implements Provider {
         for (const providerId in this.providers) {
             if (this._providerModels[providerId]) {
                 const cachedModels = this._providerModels[providerId]
-                console.log(`[${providerId}] use cached models`, cachedModels)
                 result.push(...cachedModels)
                 promises.push(Promise.resolve(cachedModels))
                 continue
@@ -137,11 +121,6 @@ export class DefaultProviderRegistry implements Provider {
                 })
             )
 
-            console.log(
-                `[${providerId}] use hardcode models`,
-                cachePlatformModels
-            )
-
             result.push(...cachePlatformModels)
             this._providerModels[providerId] = cachePlatformModels
 
@@ -152,8 +131,6 @@ export class DefaultProviderRegistry implements Provider {
                 }))
 
                 this._providerModels[providerId] = platformModels
-
-                console.log(`[${providerId}] use latest models`, platformModels)
 
                 return platformModels
             })
@@ -180,9 +157,11 @@ export interface ModelInfo {
     costPerTokenOutput?: number
 }
 
-export type PlatformModelInfo = ModelInfo & {
-    provider: string
-}
+export type PlatformModelInfo = Readonly<
+    ModelInfo & {
+        provider: string
+    }
+>
 
 /**
  * Fetch function type (standardizes the version of fetch used).

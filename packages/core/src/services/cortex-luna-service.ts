@@ -13,21 +13,21 @@ export class CortexLunaService extends Service {
     }
 
     registerProvider({ id, provider }: { id: string; provider: Provider }) {
-        const disposed = this._registry.registerProvider({
+        const providerRegistration = this._registry.registerProvider({
             id,
             provider
         })
 
-        const dispose = () => {
+        const cleanupProvider = () => {
             return () => {
-                disposed()
+                providerRegistration()
                 this.ctx.emit('cortexluna/provider-updated', this)
             }
         }
 
         this.ctx.emit('cortexluna/provider-updated', this)
 
-        return this.ctx.effect(() => dispose)
+        return this.ctx.effect(() => cleanupProvider)
     }
 
     languageModel(id: string) {
@@ -38,7 +38,7 @@ export class CortexLunaService extends Service {
         return this._registry.textEmbeddingModel(id)
     }
 
-    async models(): Promise<PlatformModelInfo[]> {
+    async models(): Promise<readonly PlatformModelInfo[]> {
         const [cached, lateast] = this._registry.models()
 
         try {

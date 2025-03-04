@@ -41,7 +41,7 @@ export async function embed<T = string>({
         }
     }
 
-    return await chunkArray(value, (model.batchSize ?? 21) - 1).reduce(
+    return await chunkArray(value, (model.batchSize ?? 20) - 1).reduce(
         async (acc, chunk) => {
             const result = await acc
             const response = await model.doEmbed({
@@ -52,14 +52,16 @@ export async function embed<T = string>({
             return {
                 embedding: result.embedding.concat(response.embeddings),
                 value,
-                usage: addEmbeddingModelUsage(result.usage, response.usage)
+                usage: response.usage
+                    ? addEmbeddingModelUsage(result.usage, response.usage)
+                    : undefined
             } as EmbedResult<T>
         },
         Promise.resolve({
             embedding: [] as number[][],
             value,
             usage: {
-                tokens: NaN
+                tokens: 0
             }
         } as EmbedResult<T>)
     )
@@ -73,5 +75,5 @@ export interface EmbedResult<T> {
         ? number[][]
         : number[]
 
-    readonly usage: EmbeddingModelUsage
+    readonly usage?: EmbeddingModelUsage
 }
