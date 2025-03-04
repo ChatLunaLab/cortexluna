@@ -152,11 +152,7 @@ export class OpenAICompatibleLanguageModel implements LanguageModel {
                         retries: this.providerConfig.maxRetries,
                         // eslint-disable-next-line @typescript-eslint/no-explicit-any
                         onRetry: (e: any) => {
-                            console.warn(
-                                `Retrying due to error: ${e.message}. ${
-                                    e.cause != null ? `Cause: ${e.cause}` : ''
-                                }`
-                            )
+                            console.warn(`Retrying due to error`, e)
                         }
                     }
                 )
@@ -258,11 +254,7 @@ export class OpenAICompatibleLanguageModel implements LanguageModel {
                         retries: this.providerConfig.maxRetries,
                         // eslint-disable-next-line @typescript-eslint/no-explicit-any
                         onRetry: (e: any) => {
-                            console.warn(
-                                `Retrying due to error: ${e.message}. ${
-                                    e.cause != null ? `Cause: ${e.cause}` : ''
-                                }`
-                            )
+                            console.warn(`Retrying due to error`, e)
                         }
                     }
                 )

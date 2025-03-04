@@ -37,19 +37,25 @@ export async function getLatestModels(
             return models
                 .filter(
                     (model) =>
-                        !model.id.includes('audio') ||
-                        !model.id.includes('tts') ||
-                        !model.id.includes('whisper') ||
-                        !model.id.includes('realtime')
+                        !(
+                            model.id.includes('audio') ||
+                            model.id.includes('tts') ||
+                            model.id.includes('whisper') ||
+                            model.id.includes('realtime') ||
+                            model.id.includes('stable-diffusion')
+                        )
                 )
 
                 .map((model): ModelInfo => {
-                    // TODO: check gemini, deepseek, ...
+                    // TODO: check gemini, deepseek, ... to get the correct context token
+                    const modelId = model.id
                     return {
-                        name: model.id,
-                        type: model.id.includes('embedding')
-                            ? ModelType.TEXT_EMBEDDING_MODEL
-                            : ModelType.LANGUAGE_MODEL,
+                        name: modelId,
+                        type:
+                            model.id.includes('embedding') ||
+                            model.id.includes('bge')
+                                ? ModelType.TEXT_EMBEDDING_MODEL
+                                : ModelType.LANGUAGE_MODEL,
                         contextToken:
                             defaultOpenAIModels.find(
                                 (m) =>

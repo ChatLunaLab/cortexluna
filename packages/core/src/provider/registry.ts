@@ -107,17 +107,19 @@ export class DefaultProviderRegistry implements Provider {
             if (this._providerModels[providerId]) {
                 const cachedModels = this._providerModels[providerId]
                 result.push(...cachedModels)
-                promises.push(Promise.resolve(this._providerModels[providerId]))
+                promises.push(Promise.resolve(cachedModels))
                 continue
             }
 
-            const [cacheModels, latestModels] =
+            const [hardcodeModels, latestModels] =
                 this.providers[providerId].models()
 
-            const cachePlatformModels = cacheModels.map((model) => ({
-                ...model,
-                provider: providerId
-            })) as PlatformModelInfo[]
+            const cachePlatformModels: PlatformModelInfo[] = hardcodeModels.map(
+                (model) => ({
+                    ...model,
+                    provider: providerId
+                })
+            )
 
             result.push(...cachePlatformModels)
             this._providerModels[providerId] = cachePlatformModels
