@@ -1,4 +1,4 @@
-import { BaseMessage } from 'cortexluna'
+import { BaseMessage, dataContentToBase64 } from 'cortexluna'
 
 export function convertToOpenAICompatibleChatMessages(
     prompt: BaseMessage[]
@@ -62,7 +62,7 @@ export function convertToOpenAICompatibleChatMessages(
                                               : `data:${
                                                     part.mineType ??
                                                     'image/jpeg'
-                                                };base64,${convertUint8ArrayToBase64(imageUrl)}`
+                                                };base64,${dataContentToBase64(imageUrl)}`
                                 }
                             }
                         }
@@ -195,14 +195,4 @@ export interface OpenAICompatibleToolMessage {
     role: 'tool'
     content: string
     tool_call_id: string
-}
-function convertUint8ArrayToBase64(
-    image:
-        | string
-        | ArrayBuffer
-        | Uint8Array<ArrayBuffer>
-        | Buffer<ArrayBuffer>
-        | URL
-) {
-    throw new Error('Function not implemented.')
 }

@@ -134,7 +134,9 @@ export class OpenAICompatibleLanguageModel implements LanguageModel {
                 OpenAICompatibleChatResponseSchema.safeParse(responseJSON)
 
             if (!parsedResponse.success) {
-                throw new Error(`Invalid response from API: ${responseBody}`)
+                throw new Error(
+                    `Invalid response from API: ${responseBody} ${parsedResponse.error}`
+                )
             }
 
             return parsedResponse.data
@@ -496,11 +498,11 @@ const OpenAICompatibleChatResponseSchema = z.object({
     ),
     usage: z
         .object({
-            prompt_tokens: z.number(),
-            completion_tokens: z.number(),
+            prompt_tokens: z.number().nullish(),
+            completion_tokens: z.number().nullish(),
             prompt_tokens_details: z
                 .object({
-                    cached_tokens: z.number()
+                    cached_tokens: z.number().nullish()
                 })
                 .nullish()
         })
