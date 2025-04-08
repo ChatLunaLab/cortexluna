@@ -145,6 +145,15 @@ export enum ModelType {
     TEXT_EMBEDDING_MODEL = 'textEmbeddingModel'
 }
 
+export enum ModelCapability {
+    IMAGE_INPUT = 'imageInput',
+    IMAGE_OUTPUT = 'imageOutput',
+    AUDIO_INPUT = 'audioInput',
+    AUDIO_OUTPUT = 'audioOutput',
+    VIDEO_INPUT = 'videoInput',
+    VIDEO_OUTPUT = 'videoOutput'
+}
+
 export interface ModelInfo {
     name: string
 
@@ -155,6 +164,8 @@ export interface ModelInfo {
     costPerTokenInput?: number
 
     costPerTokenOutput?: number
+
+    capability?: ModelCapability[]
 }
 
 export type PlatformModelInfo = Readonly<
